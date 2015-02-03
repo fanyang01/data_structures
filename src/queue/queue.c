@@ -4,81 +4,82 @@
 #include <stdlib.h>
 #include <string.h>
 
-static void queue_error(const char *q);
+static void queue_error(const char *s);
 static void copy(void *des, const void *src, size_t size);
 
-queue *queue_init(void)
+queue *queue_init(size_t unit_size)
 {
 	queue *new;
 
 	if((new = (queue *)malloc(sizeof(queue))) == NULL) {
-		queue_error("failed to allocate memory");
+		queue_error("queue_init: failed to allocate memory");
 		return NULL;
 	}
 	INIT_LIST_HEAD(&new->list);
+	new->unit_size = unit_size;
 	return new;
 }
 
-bool dequeue(queue *q, void *des, size_t size)
+bool pop(queue *s, void *des)
 {
-	if(!q || !des) return false;
-	if(list_is_empty(&q->list)) return false;
+	if(!s || !des) return false;
+	if(list_is_empty(&s->list)) return false;
 	struct queue_element *tmp;
 
-	tmp = (struct queue_element *)list_head(&q->list);
+	tmp = (struct queue_element *)list_head(&s->list);
 	if(!tmp) return false;
-	copy(des, tmp->data, size);
-	list_del(list_head(&q->list));
+	copy(des, tmp->data, s->unit_size);
+	list_del(list_head(&s->list));
 	free(tmp);
 	return true;
 }
 
-bool enqueue(queue *q, const void *data, size_t size)
+bool push(queue *s, const void *data)
 {
-	if(!q) return false;
+	if(!s) return false;
 	struct queue_element *new;
 	void *element;
 
-	element = malloc(sizeof(struct queue_element) + size);
+	element = malloc(sizeof(struct queue_element) + s->unit_size);
 	if(!element) {
-		queue_error("failed to allocate memory for new element");
+		queue_error("push: failed to allocate memory");
 		return false;
 	}
 	new = (struct queue_element *)element;
 	new->data = element + sizeof(struct queue_element);
 
-	copy(new->data, data, size);
-	list_add_tail(&q->list, &new->list);
+	copy(new->data, data, s->unit_size);
+	list_add_tail(&s->list, &new->list);
 	return true;
 }
 
-bool queue_first(const queue *q, void *des, size_t size)
+bool top(const queue *s, void *des)
 {
 	struct queue_element *tmp;
 
-	if(!q) return false;
+	if(!s) return false;
 
 	tmp = (struct queue_element *)
-		list_head((struct list_head *)(&q->list));
+		list_head((struct list_head *)(&s->list));
 	if(!tmp) return false;
-	copy(des, tmp->data, size);
+	copy(des, tmp->data, s->unit_size);
 	return true;
 }
 
-void queue_free(queue *q)
+void queue_free(queue *s)
 {
 	struct list_node *pos, *next;
 
-	list_for_each_safe(pos, next, &q->list) {
+	list_for_each_safe(pos, next, &s->list) {
 		list_del(pos);
 		free(pos);
 	}
-	free(q);
+	free(s);
 }
 
-static void queue_error(const char *q)
+static void queue_error(const char *s)
 {
-	fprintf(stderr, "%q\n", q);
+	fprintf(stderr, "%s\n", s);
 }
 
 static void copy(void *des, const void *src, size_t size)

@@ -5,19 +5,19 @@
 int main(void)
 {
 	int i, tmp;
-	queue *q;
+	queue *s;
 
-	if((q = queue_init()) == NULL) {
+	if((s = queue_init(sizeof(int))) == NULL) {
 		fprintf(stderr, "failed to initialize queue\n");
 		exit(EXIT_FAILURE);
 	}
 	for(i = 0; i < 100; i++) {
-		enqueue(q, &i, sizeof(int));
+		push(s, &i);
 	}
-	while(dequeue(q, &tmp, sizeof(int))) {
+	while(pop(s, &tmp)) {
 		printf("%d ", tmp);
 	}
 	puts("");
-	queue_free(q);
+	queue_free(s);
 	return 0;
 }

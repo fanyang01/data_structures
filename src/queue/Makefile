@@ -15,6 +15,9 @@ install:
 	cp queue.h $(INCLUDEDIR)/
 	cp $(MYLIB) $(LIBDIR)/
 
+test:
+	cc -o queue_test queue_test.c -I$(INCLUDEDIR) -L$(LIBDIR) -lqueue && \
+	./queue_test
+
 clean:
-	rm *.o
-	rm *.a
+	rm -f *.o *.a queue_test
