@@ -15,6 +15,9 @@ install:
 	cp stack.h $(INCLUDEDIR)/
 	cp $(MYLIB) $(LIBDIR)/
 
+test:
+	cc -o stack_test stack_test.c -I$(INCLUDEDIR) -L$(LIBDIR) -lstack && \
+	./stack_test
+
 clean:
-	rm *.o
-	rm *.a
+	rm -f *.o *.a stack_test
