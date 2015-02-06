@@ -55,6 +55,10 @@ struct list_head {
 
 /* test if the list is empty */
 int list_is_empty(struct list_head *list);
+/* next node */
+struct list_node *list_next(struct list_node *node);
+/* previous node */
+struct list_node *list_prev(struct list_node *node);
 /* return a pointer to the node at the tail of list */
 struct list_node *list_tail(struct list_head *list);
 /* return a pointer to the node at the head of list */
@@ -69,10 +73,13 @@ void list_add_head(struct list_head *list, struct list_node *new);
 void list_add_tail(struct list_head *list, struct list_node *new);
 /* delete the node from list */
 void list_del(struct list_node *node);
-/* delete a node safely by search it to confirm it's in the list */
-bool list_del_safe(struct list_head *list, struct list_node *node);
 /* find a node for which function found return a non-zero value */
 struct list_node *list_find(struct list_head *list, int (*found)(struct list_node *));
+/* append list y to list x */
+void list_merge(struct list_head *x, struct list_head *y);
+void list_merge_continue(struct list_head *x,
+		struct list_head *y, struct list_node *pos);
+
 /*
 macro list_for_each traverse a list from the head,
 assign pos(of type struct list_node *) to the current node
