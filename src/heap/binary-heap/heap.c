@@ -8,6 +8,7 @@
 
 static heap *shift_up(heap *h, int pos);
 static heap *shift_down(heap *h, int pos);
+static int find(heap *h, int index, void *data);
 static int child_left(int parent);
 static int child_right(int parent);
 static int parent(int child);
@@ -48,7 +49,7 @@ heap *heap_init(size_t unit_size, size_t cap, cmp_func f)
 /* make a heap empty */
 heap *heap_clean(heap *h)
 {
-	if(!h) return;
+	if(!h) return NULL;
 	h->size = 0;
 	memset(h->array, 0, h->cap * h->unit_size);
 	return h;
@@ -168,6 +169,34 @@ heap *heap_merge(heap *x, heap *y)
 	return x;
 }
 
+heap *heap_remove(heap *h, void *data)
+{
+	if(!h) return NULL;
+
+	int i = find(h, 0, data);
+	if(i < 0) {
+		heap_error("heap_remove: not found");
+		return NULL;
+	}
+	copy(h->array + offset(h, i),
+			h->array + offset(h, --h->size), h->unit_size);
+	shift_down(h, i);
+	return h;
+}
+
+int find(heap *h, int index, void *data)
+{
+	int i, n;
+
+	if(index >= h->size) return -1;
+	if((n = h->compare(h->array + offset(h, index), data)) == 0)
+		return index;
+	else if(n < 0) return -1;
+	i = find(h, child_left(index), data);
+	if(i >= 0) return i;
+	return find(h, child_right(index), data);
+}
+
 int child_left(int parent)
 {
 	return (parent << 1) + 1;
@@ -215,6 +244,7 @@ heap *shift_down(heap *h, int pos)
 	char tmp[h->unit_size];
 
 	if(!h) return NULL;
+	if(pos < 0 || pos >= h->size) return h;
 	copy(tmp, h->array + offset(h, pos), h->unit_size);
 	while((child = child_left(pos)) < h->size) {
 		if(child < h->size - 1 && // pos has a right child
