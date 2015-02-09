@@ -5,9 +5,9 @@
 #include <stdlib.h>
 #include <stdbool.h>
 
-#define MAX_HEAP_SIZE (1<<20)
+#define MAX_HEAP_SIZE (1<<24)
 #define MIN_HEAP_SIZE (1<<6)
-#define MAX_UNIT_SIZE (1<<18)
+#define MAX_UNIT_SIZE (1<<10)
 
 typedef int (*cmp_func)(void *, void *);
 typedef struct heap {
