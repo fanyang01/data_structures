@@ -2,11 +2,14 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#define MAXSIZE (1<<20)
+
 int func(void *x, void *y)
 {
 	int *a = (int *)x;
 	int *b = (int *)y;
-	if(*a <= *b) return 1;
+	if(*a < *b) return 1;
+	else if(*a == *b) return 0;
 	return -1;
 }
 
@@ -21,26 +24,28 @@ int main(void)
 		fprintf(stderr, "failed to initialize heap\n");
 		exit(EXIT_FAILURE);
 	}
-	for(i = 0; i < 50; i++)
+	for(i = 0; i < MAXSIZE; i++)
 		heap_insert(h, &i);
-	for(i = 0; i < 40; i++) {
+	for(i = 0; i < MAXSIZE; i++) {
 		heap_pop(h, &tmp);
-		printf("%d ", tmp);
+		if(i != tmp) goto FAILED;
 	}
-	puts("");
 
-	heap_clean(h);
-	for(i = 0; i < 20; i++) {
+	for(i = 0; i < MAXSIZE / 2; i++)
 		heap_insert(h, &i);
-		tmp = i << 1;
-		heap_insert(h_a, &tmp);
-	}
+
+	for(i = MAXSIZE / 2; i < MAXSIZE; i++)
+		heap_insert(h_a, &i);
+
 	heap_merge(h, h_a);
-	while(!heap_is_empty(h)) {
+	for(i = 0; i < MAXSIZE; i++) {
 		heap_pop(h, &tmp);
-		printf("%d ", tmp);
+		if(i != tmp) goto FAILED;
 	}
-	puts("");
 	heap_free(h);
+	puts("----------passed----------");
 	exit(EXIT_SUCCESS);
+FAILED:
+	puts("!!!!!!!!!!failed!!!!!!!!!!");
+	exit(EXIT_FAILURE);
 }
