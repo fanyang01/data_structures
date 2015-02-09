@@ -5,6 +5,8 @@
 #include "heap.h"
 
 #define offset(HEAP, NMEMBS) ((NMEMBS) * (HEAP->unit_size))
+#define heap_error(E) fprintf(stderr, "%s:%d:%s: %s\n", \
+		__FILE__, __LINE__, __func__, E)
 
 static heap *shift_up(heap *h, int pos);
 static heap *shift_down(heap *h, int pos);
@@ -12,7 +14,6 @@ static int find(heap *h, int index, void *data);
 static int child_left(int parent);
 static int child_right(int parent);
 static int parent(int child);
-static void heap_error(const char *s);
 static void copy(void *des, const void *src, size_t size);
 
 /* allocate and initialize a new heap */
@@ -20,22 +21,22 @@ static void copy(void *des, const void *src, size_t size);
 heap *heap_init(size_t unit_size, size_t cap, cmp_func f)
 {
 	if(!f) {
-		heap_error("heap_init: compare function missed");
+		heap_error("compare function missed");
 		return NULL;
 	}
 	if(unit_size <= 0 || unit_size > MAX_UNIT_SIZE) {
-		heap_error("heap_init: beyond max unit size");
+		heap_error("beyond max unit size");
 		return NULL;
 	}
 	if(cap > MAX_HEAP_SIZE) {
-		heap_error("heap_init: beyond max heap size");
+		heap_error("beyond max heap size");
 		return NULL;
 	}
 	if(cap < MIN_HEAP_SIZE) cap = MIN_HEAP_SIZE;
 	heap *h = (heap *)malloc(sizeof(heap));
 	void *array = malloc(cap * unit_size);
 	if(!h || !array) {
-		heap_error("heap_init: failed to allocate memory");
+		heap_error("failed to allocate memory");
 		return NULL;
 	}
 	h->array = array;
@@ -83,15 +84,15 @@ heap *heap_build(void *array, size_t unit_size,
 {
 	if(!array) return NULL;
 	if(!f) {
-		heap_error("heap_build: compare function missed");
+		heap_error("compare function missed");
 		return NULL;
 	}
 	if(unit_size <= 0 || unit_size > MAX_UNIT_SIZE) {
-		heap_error("heap_build: beyond max unit size");
+		heap_error("beyond max unit size");
 		return NULL;
 	}
 	if(size > MAX_HEAP_SIZE) {
-		heap_error("heap_build: beyond max heap size");
+		heap_error("beyond max heap size");
 		return NULL;
 	}
 
@@ -100,7 +101,7 @@ heap *heap_build(void *array, size_t unit_size,
 
 	h = (heap *)malloc(sizeof(heap));
 	if(!h) {
-		heap_error("heap_build: failed to allocate memory");
+		heap_error("failed to allocate memory");
 		return NULL;
 	}
 	h->array = array;
@@ -135,7 +136,7 @@ heap* heap_insert(heap *h, const void *data)
 {
 	if(!h) return NULL;
 	if(heap_is_full(h)) {
-		heap_error("heap_insert: heap is full");
+		heap_error("heap is full");
 		return NULL;
 	}
 	copy(h->array + offset(h, h->size++), data, h->unit_size);
@@ -158,7 +159,7 @@ heap *heap_merge(heap *x, heap *y)
 	int i;
 
 	if(x->cap < size) {
-		heap_error("heap_merge: beyond capcity");
+		heap_error("beyond capcity");
 		return NULL;
 	}
 	copy(x->array + offset(x, x->size), y->array, y->size * y->unit_size);
@@ -175,7 +176,7 @@ heap *heap_remove(heap *h, void *data)
 
 	int i = find(h, 0, data);
 	if(i < 0) {
-		heap_error("heap_remove: not found");
+		heap_error("not found");
 		return NULL;
 	}
 	copy(h->array + offset(h, i),
@@ -210,11 +211,6 @@ int child_right(int parent)
 int parent(int child)
 {
 	return (child - 1) >> 1;
-}
-
-void heap_error(const char *s)
-{
-	fprintf(stderr, "heap.c: %s\n", s);
 }
 
 void copy(void *des, const void *src, size_t size)

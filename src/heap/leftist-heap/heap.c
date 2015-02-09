@@ -4,23 +4,25 @@
 #include <stdlib.h>
 #include <string.h>
 
+#define heap_error(E) fprintf(stderr, "%s:%d:%s: %s\n", \
+		__FILE__, __LINE__, __func__, E)
+
 static heap_node *new_node(const void *data);
 static heap_node *merge(heap *h, heap_node *x, heap_node *y);
 static heap_node *pop_highest(heap *h, heap_node *root, void *des);
 static heap_node *insert(heap *h, heap_node *root, void *data);
 static void copy(void *des, const void *src, size_t size);
-static void heap_error(const char *s);
 static void free_tree(heap_node *t);
 
 heap *heap_init(size_t unit_size, cmp_func f)
 {
 	if(!f) {
-		heap_error("heap_init: compare function missed");
+		heap_error("compare function missed");
 		return NULL;
 	}
 	heap *h = (heap *)malloc(sizeof(heap));
 	if(!h) {
-		heap_error("heap_init: failed to allocate memory");
+		heap_error("failed to allocate memory");
 		return NULL;
 	}
 	h->root = NULL;
@@ -41,7 +43,7 @@ heap *heap_merge(heap *x, heap *y)
 	if(!x) return y;
 	if(!y) return x;
 	if(x->unit_size != y->unit_size) {
-		heap_error("heap_merge: heaps differ in unit size");
+		heap_error("heaps differ in unit size");
 		return NULL;
 	}
 	x->root = merge(x, x->root, y->root);
@@ -150,7 +152,7 @@ heap_node *insert(heap *h, heap_node *root, void *data)
 	heap_node *new = (heap_node *)malloc(sizeof(heap_node));
 	void *new_data = malloc(h->unit_size);
 	if(!new || !new_data) {
-		heap_error("heap_insert: failed to allocate memory");
+		heap_error("failed to allocate memory");
 		return NULL;
 	}
 	new = init_node(new);
@@ -158,7 +160,7 @@ heap_node *insert(heap *h, heap_node *root, void *data)
 	copy(new->data, data, h->unit_size);
 	root = merge(h, root, new);
 	if(!root) {
-		heap_error("heap_insert: merge new node into heap failed");
+		heap_error("merge new node into heap failed");
 		return NULL;
 	}
 	return root;
@@ -176,9 +178,3 @@ void copy(void *des, const void *src, size_t size)
 {
 	memcpy(des, src, size);
 }
-
-void heap_error(const char *s)
-{
-	fprintf(stderr, "heap.c: %s\n", s);
-}
-// Static functions END

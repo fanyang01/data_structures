@@ -5,6 +5,8 @@
 #include "list.h"
 #include "heap.h"
 
+#define heap_error(E) fprintf(stderr, "%s:%d:%s: %s\n", \
+		__FILE__, __LINE__, __func__, E)
 #define HEAD(x) (list_is_empty(x) ? NULL : \
 		(heap_tree *)(list_head(x)))
 #define TAIL(x) (list_is_empty(x) ? NULL : \
@@ -18,18 +20,17 @@ static heap_tree *merge_tree(heap *h, struct list_head *x,
 static heap_tree *merge_carry(heap *h, heap_tree *x, heap_tree *c);
 static heap_tree *new_tree(heap *h, void *data);
 static void free_list(struct list_head *list);
-static void heap_error(const char *s);
 static void copy(void *des, const void *src, size_t size);
 
 heap *heap_init(size_t unit_size, cmp_func f)
 {
 	if(!f) {
-		heap_error("heap_init: compare function missed");
+		heap_error("compare function missed");
 		return NULL;
 	}
 	heap *h = (heap *)malloc(sizeof(heap));
 	if(!h) {
-		heap_error("heap_init: failed to allocate memory");
+		heap_error("failed to allocate memory");
 		return NULL;
 	}
 	h->unit_size = unit_size;
@@ -76,7 +77,7 @@ heap *heap_pop(heap *h, void *des)
 {
 	if(!h || !des) return NULL;
 	if(h->size == 0) {
-		heap_error("heap_pop: heap is empty");
+		heap_error("heap is empty");
 		return NULL;
 	}
 	heap_tree *highest = NULL;
@@ -96,7 +97,7 @@ heap *heap_pop(heap *h, void *des)
 	list_del(&highest->siblings);
 	copy(des, highest->data, h->unit_size);
 	if(!merge(h, &h->list, &highest->childs)) {
-		heap_error("heap_pop: merge failed");
+		heap_error("merge failed");
 		return NULL;
 	}
 	free(highest->data);
@@ -114,7 +115,7 @@ heap *heap_insert(heap *h, void *data)
 	if(!t) return NULL;
 	list_add_head(&list, &t->siblings);
 	if(!merge(h, &h->list, &list)) {
-		heap_error("heap_insert: merge failed");
+		heap_error("merge failed");
 		return NULL;
 	}
 	h->size++;
@@ -201,7 +202,7 @@ heap_tree *new_tree(heap *h, void *data)
 		malloc(sizeof(heap_tree));
 	void *t_data = malloc(h->unit_size);
 	if(!t || !t_data) {
-		heap_error("new_tree: failed to allocate memory");
+		heap_error("failed to allocate memory");
 		return NULL;
 	}
 	t->data = t_data;
@@ -220,11 +221,6 @@ void free_list(struct list_head *list)
 		free_list(&((heap_tree *)pos)->childs);
 		free(pos);
 	}
-}
-
-void heap_error(const char *s)
-{
-	fprintf(stderr, "heap.c: %s\n", s);
 }
 
 void copy(void *des, const void *src, size_t size)
