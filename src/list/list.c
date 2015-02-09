@@ -3,7 +3,8 @@
 #include <stdbool.h>
 #include "list.h"
 
-static void list_error(const char *s);
+#define list_error(E) fprintf(stderr, "%s:%d:%s: %s\n", \
+		__FILE__, __LINE__, __func__, E)
 
 int list_is_empty(struct list_head *list)
 {
@@ -96,9 +97,4 @@ struct list_node *list_next(struct list_node *node)
 struct list_node *list_prev(struct list_node *node)
 {
 	return (struct list_node *)node->prev;
-}
-
-void list_error(const char *s)
-{
-	fprintf(stderr, "list.c: %s\n", s);
 }

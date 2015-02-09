@@ -4,7 +4,8 @@
 #include <stdlib.h>
 #include <string.h>
 
-static void queue_error(const char *s);
+#define queue_error(E) fprintf(stderr, "%s:%d:%s: %s\n", \
+		__FILE__, __LINE__, __func__, E)
 static void copy(void *des, const void *src, size_t size);
 
 queue *queue_init(size_t unit_size)
@@ -75,11 +76,6 @@ void queue_free(queue *s)
 		free(pos);
 	}
 	free(s);
-}
-
-static void queue_error(const char *s)
-{
-	fprintf(stderr, "%s\n", s);
 }
 
 static void copy(void *des, const void *src, size_t size)
