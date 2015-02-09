@@ -7,7 +7,7 @@ INCDIR=../../include
 $(LIBS): $(LIBS)(tree.o)
 
 tree.o: tree.c tree.h
-	$(CC) -c -o tree.o tree.c $(CFLAGS) -I$(INCDIR) -L$(LIBDIR)
+	$(CC) -c -o tree.o tree.c $(CFLAGS)
 
 install:
 	cp $(LIBS) $(LIBDIR)
