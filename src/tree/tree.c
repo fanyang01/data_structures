@@ -4,12 +4,16 @@
 #include <stdbool.h>
 #include <string.h>
 
-static struct tree *search(rb_tree *t, void *data);
+#define error(S) tree_error(__FILE__, __LINE__, __func__, S)
+#define BLACK 0
+#define RED   1
+
+static struct tree *search(rb_tree *t, const void *data);
 static void rb_insert_fixup(rb_tree *t, struct tree *x);
 static void rb_delete_fixup(rb_tree *t, struct tree *x);
 static void transplant(rb_tree *t, struct tree *to, struct tree *from);
 static struct tree *minimum(rb_tree *t, struct tree *node);
-static struct tree *new_node(rb_tree *t, void *data);
+static struct tree *new_node(rb_tree *t, const void *data);
 static struct tree *left_rotate(rb_tree *t, struct tree *x);
 static struct tree *right_rotate(rb_tree *t, struct tree *x);
 static struct tree *double_right_rotate(rb_tree *t, struct tree *x);
@@ -17,11 +21,7 @@ static struct tree *double_left_rotate(rb_tree *t, struct tree *x);
 static void free_node(rb_tree *t, struct tree *node);
 void tree_error(const char *filename, int line,
 		const char *funcname, const char *s);
-static void copy(void *des, void *src, size_t size);
-
-#define error(S) tree_error(__FILE__, __LINE__, __func__, S)
-#define BLACK 0
-#define RED   1
+static void copy(void *des, const void *src, size_t size);
 
 rb_tree *tree_init(size_t unit_size, cmp_func f)
 {
@@ -52,7 +52,7 @@ rb_tree *tree_init(size_t unit_size, cmp_func f)
 	return t;
 }
 
-rb_tree *tree_insert(rb_tree *t, void *data)
+rb_tree *tree_insert(rb_tree *t, const void *data)
 {
 	if(!t || !data) return NULL;
 	struct tree *x = t->root;
@@ -85,14 +85,14 @@ rb_tree *tree_insert(rb_tree *t, void *data)
 	return t;
 }
 
-void *tree_search(rb_tree *t, void *data)
+void *tree_search(rb_tree *t, const void *data)
 {
 	struct tree *node = search(t, data);
 	if(!node) return NULL;
 	return node->data;
 }
 
-rb_tree *tree_delete(rb_tree *t, void *data, void *des)
+rb_tree *tree_delete(rb_tree *t, const void *data)
 {
 	if(!t) return NULL;
 	if(!data) return t;
@@ -119,7 +119,13 @@ rb_tree *tree_delete(rb_tree *t, void *data, void *des)
 		 * when y is the right child of node,
 		 * no need to move y->right
 		 */
-		if(y->p != node) {
+		if(y->p == node) {
+		/* !!! very important !!!
+		 * for x can be t->nil,
+		 * whose parent is uncertain
+		 */
+			x->p = y;
+		} else {
 			transplant(t, y, y->right);
 			y->right = node->right;
 			node->right->p = y;
@@ -129,7 +135,6 @@ rb_tree *tree_delete(rb_tree *t, void *data, void *des)
 		transplant(t, node, y);
 		y->color = node->color;
 	}
-	copy(des, node->data, t->unit_size);
 	free(node->data);
 	free(node);
 	if(prev_color == BLACK)
@@ -146,7 +151,7 @@ void tree_free(rb_tree *t)
 	free(t);
 }
 
-struct tree *search(rb_tree *t, void *data)
+struct tree *search(rb_tree *t, const void *data)
 {
 	struct tree *x = t->root;
 	int res;
@@ -336,7 +341,7 @@ struct tree *minimum(rb_tree *t, struct tree *node)
 	return node;
 }
 
-struct tree *new_node(rb_tree *t, void *data)
+struct tree *new_node(rb_tree *t, const void *data)
 {
 	if(!t) return NULL;
 	struct tree *node = (struct tree *)
@@ -377,6 +382,7 @@ struct tree *left_rotate(rb_tree *t, struct tree *x)
 	struct tree *y = x->right;
 	transplant(t, x, y);
 	x->right = y->left;
+	y->left->p = x;
 	y->left = x;
 	x->p = y;
 	return y;
@@ -400,6 +406,7 @@ struct tree *right_rotate(rb_tree *t, struct tree *x)
 	struct tree *y = x->left;
 	transplant(t, x, y);
 	x->left = y->right;
+	y->right->p = x;
 	y->right = x;
 	x->p = y;
 	return y;
@@ -426,10 +433,12 @@ struct tree *double_right_rotate(rb_tree *t, struct tree *x)
 	struct tree *z = y->right;
 	transplant(t, x, z);
 	y->right = z->left;
+	z->left->p = y;
 	x->left = z->right;
+	z->right->p = x;
 	z->left = y;
-	z->right = x;
 	y->p = z;
+	z->right = x;
 	x->p = z;
 	return z;
 }
@@ -455,10 +464,12 @@ struct tree *double_left_rotate(rb_tree *t, struct tree *x)
 	struct tree *z = y->left;
 	transplant(t, x, z);
 	y->left = z->right;
+	z->right->p = y;
 	x->right = z->left;
+	z->left->p = x;
 	z->right = y;
-	z->left = x;
 	y->p = z;
+	z->left = x;
 	x->p = z;
 	return z;
 }
@@ -479,7 +490,7 @@ void tree_error(const char *filename, int line,
 			line, funcname, s);
 }
 
-void copy(void *des, void *src, size_t size)
+void copy(void *des, const void *src, size_t size)
 {
 	memcpy(des, src, size);
 }
