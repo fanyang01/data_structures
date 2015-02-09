@@ -100,7 +100,7 @@ rb_tree *tree_delete(rb_tree *t, const void *data)
 	struct tree *x, *y;
 	struct tree *node = search(t, data);
 	if(!node) {
-		error("not found");
+		/* error("not found"); */
 		return NULL;
 	}
 	y = node;
