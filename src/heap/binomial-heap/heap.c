@@ -174,14 +174,12 @@ heap_tree *new_tree(heap *h, void *data)
 void free_list(heap_tree *list)
 {
 	if(!list) return;
-	heap_tree *pos, *next;
-	pos = list;
-	while(!pos) {
-		free(pos->data);
-		free_list(pos->childs);
-		next = pos->siblings;
-		free(pos);
-		pos = next;
+	while(!list) {
+		free(list->data);
+		free_list(list->childs);
+		heap_tree *next = list->siblings;
+		free(list);
+		list = next;
 	}
 }
 
