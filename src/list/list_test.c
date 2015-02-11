@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include "list.h"
 
-#define MAXSIZE (1<<16)
+#define MAXSIZE (1<<18)
 
 typedef struct {
 	struct list_node list;

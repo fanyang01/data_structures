@@ -18,4 +18,4 @@ test:
 	./list_test
 
 clean:
-	rm -f *.o *.a
+	rm -f *.o *.a list_test
