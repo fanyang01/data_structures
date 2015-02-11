@@ -7,8 +7,8 @@
 
 typedef int (*cmp_func)(void *, void *);
 typedef struct heap_tree {
-	struct list_node siblings;
-	struct list_head childs;
+	struct heap_tree *siblings;
+	struct heap_tree *childs;
 	int rank;
 	void *data;
 } heap_tree;
@@ -17,7 +17,7 @@ typedef struct {
 	size_t size;
 	size_t unit_size;
 	cmp_func compare;
-	struct list_head list;
+	heap_tree *list;
 } heap;
 
 heap *heap_init(size_t unit_size, cmp_func f);
