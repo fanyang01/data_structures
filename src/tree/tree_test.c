@@ -60,7 +60,6 @@ int main(void)
 			}
 			tested[tmp] = 1;
 		}
-		tested[tmp] = 1;
 	}
 	tree_free(t);
 	puts("----------passed----------");

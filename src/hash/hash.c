@@ -56,7 +56,7 @@ hash *hash_init(struct hash_init *h_init)
 	hash_slot *table = (hash_slot *)
 		malloc(h_init->size * sizeof(hash_slot));
 	if(!h || !table) {
-		hash_error("hash_init: failed to allocate memory");
+		hash_error("failed to allocate memory");
 		free(h);
 		free(table);
 		return NULL;

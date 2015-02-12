@@ -70,7 +70,6 @@ int main(void)
 			}
 			tested[tmp] = 1;
 		}
-		tested[tmp] = 1;
 	}
 	hash_free(h);
 	puts("----------passed----------");
