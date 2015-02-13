@@ -77,7 +77,7 @@ void list_del(struct list_node *node);
 struct list_node *list_find(struct list_head *list, int (*found)(struct list_node *));
 /* append list y to list x */
 void list_merge(struct list_head *x, struct list_head *y);
-void list_merge_continue(struct list_head *x,
+void list_merge_at(struct list_head *x,
 		struct list_head *y, struct list_node *pos);
 
 /*

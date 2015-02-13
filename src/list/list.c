@@ -39,8 +39,8 @@ void list_del(struct list_node *node)
 	if(node) {
 		*node->prev = node->next;
 		node->next->prev = node->prev;
-		node->prev = NULL;
-		node->next = NULL;
+		/* node->prev = NULL; */
+		/* node->next = NULL; */
 		return;
 	}
 	list_error("delete a non-exit node");
@@ -64,19 +64,20 @@ void list_merge(struct list_head *x, struct list_head *y)
 {
 	if(list_is_empty(y)) return;
 	y->first->prev = x->tail;
-	((struct list_node *)(x->tail))->next = y->first;
+	*x->tail = y->first;
 	x->tail = y->tail;
-	((struct list_node *)(y->tail))->next = (struct list_node *)x;
+	*y->tail = (struct list_node *)x;
 }
 
-void list_merge_continue(struct list_head *x,
+void list_merge_at(struct list_head *x,
 		struct list_head *y, struct list_node *pos)
 {
 	if(!pos) return;
-	pos->prev = x->tail;
-	((struct list_node *)(x->tail))->next = pos;
-	x->tail = y->tail;
-	((struct list_node *)(y->tail))->next = (struct list_node *)x;
+	if(list_is_empty(y)) return;
+	y->first->prev = &pos->next;
+	pos->next->prev = y->tail;
+	*y->tail = pos->next;
+	pos->next = y->first;
 }
 
 struct list_node *list_tail(struct list_head *list)
