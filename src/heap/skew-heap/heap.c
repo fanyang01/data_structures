@@ -14,7 +14,7 @@ static heap_node *insert(heap *h, heap_node *root, void *data);
 static void copy(void *des, const void *src, size_t size);
 static void free_tree(heap_node *t);
 
-heap *heap_init(size_t unit_size, cmp_func f)
+heap *heap_init(size_t data_size, cmp_func f)
 {
 	if(!f) {
 		heap_error("compare function missed");
@@ -27,7 +27,7 @@ heap *heap_init(size_t unit_size, cmp_func f)
 	}
 	h->root = NULL;
 	h->size = 0;
-	h->unit_size = unit_size;
+	h->data_size = data_size;
 	h->compare = f;
 	return h;
 }
@@ -42,7 +42,7 @@ heap *heap_merge(heap *x, heap *y)
 {
 	if(!x) return y;
 	if(!y) return x;
-	if(x->unit_size != y->unit_size) {
+	if(x->data_size != y->data_size) {
 		heap_error("heaps differ in unit size");
 		return NULL;
 	}
@@ -128,7 +128,7 @@ heap_node *pop_highest(heap *h, heap_node *root, void *des)
 	if(!h || !root || !des) return NULL;
 	heap_node *h_new;
 
-	copy(des, root->data, h->unit_size);
+	copy(des, root->data, h->data_size);
 	h_new = merge(h, root->left, root->right);
 	free(root->data);
 	free(root);
@@ -138,14 +138,14 @@ heap_node *pop_highest(heap *h, heap_node *root, void *des)
 heap_node *insert(heap *h, heap_node *root, void *data)
 {
 	heap_node *new = (heap_node *)malloc(sizeof(heap_node));
-	void *new_data = malloc(h->unit_size);
+	void *new_data = malloc(h->data_size);
 	if(!new || !new_data) {
 		heap_error("failed to allocate memory");
 		return NULL;
 	}
 	new = init_node(new);
 	new->data = new_data;
-	copy(new->data, data, h->unit_size);
+	copy(new->data, data, h->data_size);
 	root = merge(h, root, new);
 	if(!root) {
 		heap_error("merge new node into heap failed");

@@ -3,7 +3,6 @@
 
 #include <stdlib.h>
 #include <stdbool.h>
-#include "list.h"
 
 typedef int (*cmp_func)(void *, void *);
 typedef struct heap_tree {
@@ -15,12 +14,12 @@ typedef struct heap_tree {
 
 typedef struct {
 	size_t size;
-	size_t unit_size;
+	size_t data_size;
 	cmp_func compare;
 	heap_tree *list;
 } heap;
 
-heap *heap_init(size_t unit_size, cmp_func f);
+heap *heap_init(size_t data_size, cmp_func f);
 bool heap_is_empty(heap *h);
 void heap_free(heap *h);
 heap *heap_clean(heap *h);

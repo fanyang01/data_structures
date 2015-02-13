@@ -28,14 +28,11 @@
 		__FILE__, __LINE__, __func__, E)
 
 static heap_tree *merge(heap *h, heap_tree *x, heap_tree *y);
-static heap_tree *merge_tree(heap *h, heap_tree *x,
-		heap_tree *y, heap_tree *tree_x, heap_tree *tree_y);
-static heap_tree *merge_carry(heap *h, heap_tree *x, heap_tree *c);
 static heap_tree *new_tree(heap *h, void *data);
 static void free_list(heap_tree *list);
 static void copy(void *des, const void *src, size_t size);
 
-heap *heap_init(size_t unit_size, cmp_func f)
+heap *heap_init(size_t data_size, cmp_func f)
 {
 	if(!f) {
 		heap_error("compare function missed");
@@ -46,7 +43,7 @@ heap *heap_init(size_t unit_size, cmp_func f)
 		heap_error("failed to allocate memory");
 		return NULL;
 	}
-	h->unit_size = unit_size;
+	h->data_size = data_size;
 	h->size = 0;
 	h->compare = f;
 	h->list = NULL;
@@ -105,7 +102,7 @@ heap *heap_pop(heap *h, void *des)
 	}
 
 	*highest_prev = highest->siblings;
-	copy(des, highest->data, h->unit_size);
+	copy(des, highest->data, h->data_size);
 	h->list = merge(h, h->list, highest->childs);
 	free(highest->data);
 	free(highest);
@@ -157,7 +154,7 @@ heap_tree *new_tree(heap *h, void *data)
 {
 	heap_tree *t = (heap_tree *)
 		malloc(sizeof(heap_tree));
-	void *t_data = malloc(h->unit_size);
+	void *t_data = malloc(h->data_size);
 	if(!t || !t_data) {
 		heap_error("failed to allocate memory");
 		free(t);
@@ -167,7 +164,7 @@ heap_tree *new_tree(heap *h, void *data)
 	t->data = t_data;
 	t->rank = 0;
 	t->siblings = t->childs = NULL;
-	copy(t->data, data, h->unit_size);
+	copy(t->data, data, h->data_size);
 	return t;
 }
 

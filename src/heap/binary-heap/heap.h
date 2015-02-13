@@ -12,7 +12,7 @@
 typedef int (*cmp_func)(void *, void *);
 typedef struct heap {
 	size_t cap;
-	size_t unit_size;
+	size_t data_size;
 	size_t size;
 	cmp_func compare;
 	void *array;
@@ -20,7 +20,7 @@ typedef struct heap {
 
 /* allocate and initialize a new heap */
 /* return NULL when failed */
-heap *heap_init(size_t unit_size, size_t cap, cmp_func f);
+heap *heap_init(size_t data_size, size_t cap, cmp_func f);
 /* make a heap empty */
 heap *heap_clean(heap *h);
 /* free the space occupied by heap */
@@ -30,7 +30,7 @@ bool heap_is_empty(const heap *h);
 /* test if the heap is full */
 bool heap_is_full(const heap *h);
 /* build heap from a given array */
-heap *heap_build(void *array, size_t unit_size,
+heap *heap_build(void *array, size_t data_size,
 		size_t size, cmp_func f);
 /* pop the element of highest priority */
 heap *heap_pop(heap *h, void *des);

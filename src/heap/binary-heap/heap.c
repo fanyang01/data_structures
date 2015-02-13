@@ -4,7 +4,7 @@
 #include <string.h>
 #include "heap.h"
 
-#define offset(HEAP, NMEMBS) ((NMEMBS) * (HEAP->unit_size))
+#define offset(HEAP, NMEMBS) ((NMEMBS) * (HEAP->data_size))
 #define heap_error(E) fprintf(stderr, "%s:%d:%s: %s\n", \
 		__FILE__, __LINE__, __func__, E)
 
@@ -18,13 +18,13 @@ static void copy(void *des, const void *src, size_t size);
 
 /* allocate and initialize a new heap */
 /* return NULL when failed */
-heap *heap_init(size_t unit_size, size_t cap, cmp_func f)
+heap *heap_init(size_t data_size, size_t cap, cmp_func f)
 {
 	if(!f) {
 		heap_error("compare function missed");
 		return NULL;
 	}
-	if(unit_size <= 0 || unit_size > MAX_UNIT_SIZE) {
+	if(data_size <= 0 || data_size > MAX_UNIT_SIZE) {
 		heap_error("beyond max unit size");
 		return NULL;
 	}
@@ -34,14 +34,14 @@ heap *heap_init(size_t unit_size, size_t cap, cmp_func f)
 	}
 	if(cap < MIN_HEAP_SIZE) cap = MIN_HEAP_SIZE;
 	heap *h = (heap *)malloc(sizeof(heap));
-	void *array = malloc(cap * unit_size);
+	void *array = malloc(cap * data_size);
 	if(!h || !array) {
 		heap_error("failed to allocate memory");
 		return NULL;
 	}
 	h->array = array;
 	h->cap = cap;
-	h->unit_size = unit_size;
+	h->data_size = data_size;
 	h->compare = f;
 	heap_clean(h);
 	return h;
@@ -52,7 +52,7 @@ heap *heap_clean(heap *h)
 {
 	if(!h) return NULL;
 	h->size = 0;
-	memset(h->array, 0, h->cap * h->unit_size);
+	memset(h->array, 0, h->cap * h->data_size);
 	return h;
 }
 
@@ -79,7 +79,7 @@ bool heap_is_full(const heap *h)
 }
 
 /* build heap from a given array */
-heap *heap_build(void *array, size_t unit_size,
+heap *heap_build(void *array, size_t data_size,
 		size_t size, cmp_func f)
 {
 	if(!array) return NULL;
@@ -87,7 +87,7 @@ heap *heap_build(void *array, size_t unit_size,
 		heap_error("compare function missed");
 		return NULL;
 	}
-	if(unit_size <= 0 || unit_size > MAX_UNIT_SIZE) {
+	if(data_size <= 0 || data_size > MAX_UNIT_SIZE) {
 		heap_error("beyond max unit size");
 		return NULL;
 	}
@@ -107,7 +107,7 @@ heap *heap_build(void *array, size_t unit_size,
 	h->array = array;
 	h->cap = size;
 	h->size = size;
-	h->unit_size = unit_size;
+	h->data_size = data_size;
 	for(i = parent(h->size - 1); i >= 0; i--)
 		shift_down(h, i);
 	return h;
@@ -118,8 +118,8 @@ heap *heap_pop(heap *h, void *des)
 {
 	if(!h) return NULL;
 	if(heap_is_empty(h)) return NULL;
-	copy(des, h->array, h->unit_size);
-	copy(h->array, h->array + offset(h, --h->size), h->unit_size);
+	copy(des, h->array, h->data_size);
+	copy(h->array, h->array + offset(h, --h->size), h->data_size);
 	shift_down(h, 0);
 	return h;
 }
@@ -139,7 +139,7 @@ heap* heap_insert(heap *h, const void *data)
 		heap_error("heap is full");
 		return NULL;
 	}
-	copy(h->array + offset(h, h->size++), data, h->unit_size);
+	copy(h->array + offset(h, h->size++), data, h->data_size);
 	shift_up(h, h->size - 1);
 	return h;
 }
@@ -150,7 +150,7 @@ heap *heap_merge(heap *x, heap *y)
 {
 	if(!x) return y;
 	if(!y) return x;
-	if(x->unit_size != y->unit_size) {
+	if(x->data_size != y->data_size) {
 		heap_error("heaps differ on unit size");
 		return NULL;
 	}
@@ -162,7 +162,7 @@ heap *heap_merge(heap *x, heap *y)
 		heap_error("beyond capcity");
 		return NULL;
 	}
-	copy(x->array + offset(x, x->size), y->array, y->size * y->unit_size);
+	copy(x->array + offset(x, x->size), y->array, y->size * y->data_size);
 	x->size = size;
 	for(i = parent(size - 1); i >= 0; i--)
 		shift_down(x, i);
@@ -180,7 +180,7 @@ heap *heap_remove(heap *h, void *data)
 		return NULL;
 	}
 	copy(h->array + offset(h, i),
-			h->array + offset(h, --h->size), h->unit_size);
+			h->array + offset(h, --h->size), h->data_size);
 	shift_down(h, i);
 	return h;
 }
@@ -220,28 +220,28 @@ void copy(void *des, const void *src, size_t size)
 
 heap *shift_up(heap *h, int pos)
 {
-	char tmp[h->unit_size];
+	char tmp[h->data_size];
 
 	if(!h) return NULL;
-	copy(tmp, h->array + offset(h, pos), h->unit_size);
+	copy(tmp, h->array + offset(h, pos), h->data_size);
 	while(pos && h->compare(tmp,
 			h->array + offset(h, parent(pos))) > 0) {
 		copy(h->array + offset(h, pos),
-				h->array + offset(h, parent(pos)), h->unit_size);
+				h->array + offset(h, parent(pos)), h->data_size);
 		pos = parent(pos);
 	}
-	copy(h->array + offset(h, pos), tmp, h->unit_size);
+	copy(h->array + offset(h, pos), tmp, h->data_size);
 	return h;
 }
 
 heap *shift_down(heap *h, int pos)
 {
 	int child;
-	char tmp[h->unit_size];
+	char tmp[h->data_size];
 
 	if(!h) return NULL;
 	if(pos < 0 || pos >= h->size) return h;
-	copy(tmp, h->array + offset(h, pos), h->unit_size);
+	copy(tmp, h->array + offset(h, pos), h->data_size);
 	while((child = child_left(pos)) < h->size) {
 		if(child < h->size - 1 && // pos has a right child
 				h->compare(h->array + offset(h, child_right(pos)),
@@ -249,10 +249,10 @@ heap *shift_down(heap *h, int pos)
 			child = child_right(pos);
 		if(h->compare(h->array + offset(h, child), tmp) > 0)
 			copy(h->array + offset(h, pos),
-					h->array + offset(h, child), h->unit_size);
+					h->array + offset(h, child), h->data_size);
 		else break;
 		pos = child;
 	}
-	copy(h->array + offset(h, pos), tmp, h->unit_size);
+	copy(h->array + offset(h, pos), tmp, h->data_size);
 	return h;
 }
