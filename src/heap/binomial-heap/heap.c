@@ -28,7 +28,7 @@
 		__FILE__, __LINE__, __func__, E)
 
 static heap_tree *merge(heap *h, heap_tree *x, heap_tree *y);
-static heap_tree *new_tree(heap *h, void *data);
+static heap_tree *new_tree(heap *h, const void *data);
 static void free_list(heap_tree *list);
 static void copy(void *des, const void *src, size_t size);
 
@@ -50,7 +50,7 @@ heap *heap_init(size_t data_size, cmp_func f)
 	return h;
 }
 
-bool heap_is_empty(heap *h)
+bool heap_is_empty(const heap *h)
 {
 	if(!h) return false;
 	return h->size == 0;
@@ -112,13 +112,49 @@ heap *heap_pop(heap *h, void *des)
 	return h;
 }
 
-heap *heap_insert(heap *h, void *data)
+const void *heap_highest(const heap *h)
+{
+	if(!h) return NULL;
+	if(h->size == 0) {
+		/* heap_error("heap is empty"); */
+		return NULL;
+	}
+	heap_tree *highest = h->list;
+	heap_tree *pos = h->list->siblings;
+
+	while(pos) {
+		if(h->compare(highest->data, pos->data) < 0)
+			highest = pos;
+		pos = pos->siblings;
+	}
+	return highest->data;
+}
+
+heap_tree *heap_insert(heap *h, const void *data)
 {
 	if(!h || !data) return NULL;
 	heap_tree *t = new_tree(h, data);
 	if(!t) return NULL;
 	h->list = merge(h, h->list, t);
 	h->size++;
+	return t;
+}
+
+heap *increase_priority(heap *h, heap_tree *x, const void *data)
+{
+	if(!h || !x || !data) return NULL;
+	if(h->compare(x->data, data) > 0) {
+		heap_error("new value has lower priority");
+		return NULL;
+	}
+	copy(x->data, data, h->data_size);
+	heap_tree *p = x->p;
+	while(p && h->compare(p->data, x->data) < 0) {
+		char tmp[h->data_size];
+		copy(tmp, p->data, h->data_size);
+		copy(p->data, x->data, h->data_size);
+		copy(x->data, tmp, h->data_size);
+	}
 	return h;
 }
 
@@ -144,6 +180,7 @@ heap_tree *merge(heap *h, heap_tree *x, heap_tree *y)
 		}
 		y->siblings = x->childs;
 		x->childs = y;
+		y->p = x;
 		x->rank++;
 		x->siblings = rest;
 		return x;
@@ -152,7 +189,7 @@ heap_tree *merge(heap *h, heap_tree *x, heap_tree *y)
 	}
 }
 
-heap_tree *new_tree(heap *h, void *data)
+heap_tree *new_tree(heap *h, const void *data)
 {
 	heap_tree *t = (heap_tree *)
 		malloc(sizeof(heap_tree));
@@ -165,7 +202,7 @@ heap_tree *new_tree(heap *h, void *data)
 	}
 	t->data = t_data;
 	t->rank = 0;
-	t->siblings = t->childs = NULL;
+	t->siblings = t->childs = t->p = NULL;
 	copy(t->data, data, h->data_size);
 	return t;
 }
