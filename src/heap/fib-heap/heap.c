@@ -11,7 +11,9 @@
 #define heap_error(E) fprintf(stderr, "%s:%d:%s: %s\n", \
 		__FILE__, __LINE__, __func__, E)
 
-
+static void consolidate(heap *h);
+static void cut(heap *h, heap_node *x, heap_node *p);
+static void cascading_cut(heap *h, heap_node *x);
 static void consolidate(heap *h);
 static heap_node *new_node(heap *h, const void *data);
 static void free_list(struct list_head *list);
@@ -59,7 +61,7 @@ heap *heap_clean(heap *h)
 	return h;
 }
 
-heap *heap_insert(heap *h, const void *data)
+heap_handle heap_insert(heap *h, const void *data)
 {
 	if(!h || !data) return NULL;
 	heap_node *node = new_node(h, data);
@@ -73,7 +75,7 @@ heap *heap_insert(heap *h, const void *data)
 		h->highest = node;
 	}
 	h->size++;
-	return h;
+	return node;
 }
 
 heap *heap_pop(heap *h, void *des)
@@ -91,7 +93,6 @@ heap *heap_pop(heap *h, void *des)
 	else
 		consolidate(h);
 	h->size--;
-
 	return h;
 }
 
@@ -106,6 +107,47 @@ heap *heap_merge(heap *x, heap *y)
 	}
 	x->size += y->size;
 	return x;
+}
+
+heap *increase_priority(heap *h, heap_node *x, const void *data)
+{
+	if(!h || !x || !data) return NULL;
+	if(h->compare(x->data, data) > 0) {
+		heap_error("new value has lower priority");
+		return NULL;
+	}
+	copy(x->data, data, h->data_size);
+	heap_node *p = x->p;
+	if(p && h->compare(p->data, x->data) < 0) {
+		cut(h, x, p);
+		cascading_cut(h, p);
+	}
+	if(h->compare(x->data, h->highest->data) > 0) {
+		h->highest = x;
+	}
+	return h;
+}
+
+void cut(heap *h, heap_node *x, heap_node *p)
+{
+	list_del(&x->node);
+	p->degree--;
+	list_add_tail(&h->root_list, &x->node);
+	x->p = NULL;
+	x->mark = FALSE;
+}
+
+void cascading_cut(heap *h, heap_node *x)
+{
+	heap_node *p = x->p;
+	if(p) {
+		if(x->mark == FALSE) {
+			x->mark = TRUE;
+		} else {
+			cut(h, x, p);
+			cascading_cut(h, p);
+		}
+	}
 }
 
 void consolidate(heap *h)
@@ -128,6 +170,7 @@ void consolidate(heap *h)
 			/* link y to x and clear the mark of y */
 			list_del(&y->node);
 			list_add_head(&x->childs, &y->node);
+			y->p = x;
 			y->mark == FALSE;
 			x->degree++;
 			degree[d++] = NULL;
@@ -138,6 +181,7 @@ void consolidate(heap *h)
 	h->highest = NULL;
 	for(i = 0; i < MAX_DEGREE; i++) {
 		if(degree[i]) {
+			degree[i]->p = NULL;
 			list_add_head(&h->root_list, &degree[i]->node);
 			if(!h->highest || h->compare(h->highest->data,
 						degree[i]->data) < 0) {
@@ -162,6 +206,7 @@ heap_node *new_node(heap *h, const void *data)
 	node->degree = 0;
 	INIT_LIST_HEAD(&node->childs);
 	node->mark = FALSE;
+	node->p = NULL;
 	copy(node->data, data, h->data_size);
 	return node;
 }
