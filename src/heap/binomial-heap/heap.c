@@ -65,9 +65,11 @@ void heap_free(heap *h)
 
 heap *heap_clean(heap *h)
 {
-	if(h) free_list(h->list);
-	h->size = 0;
-	h->list = NULL;
+	if(h) {
+		free_list(h->list);
+		h->size = 0;
+		h->list = NULL;
+	}
 	return h;
 }
 
