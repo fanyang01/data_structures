@@ -21,7 +21,11 @@ void list_add(struct list_node *pos, struct list_node *new)
 
 void list_add_prev(struct list_node *pos, struct list_node *new)
 {
-	list_add((struct list_node *)(pos->prev), new);
+	/* list_add((struct list_node *)(pos->prev), new); */
+	new->next = pos;
+	new->prev = pos->prev;
+	*pos->prev = new;
+	pos->prev = &new->next;
 }
 
 void list_add_head(struct list_head *list, struct list_node *new)
@@ -31,7 +35,7 @@ void list_add_head(struct list_head *list, struct list_node *new)
 
 void list_add_tail(struct list_head *list, struct list_node *new)
 {
-	list_add((struct list_node *)(list->tail), new);
+	list_add_prev((struct list_node *)list, new);
 }
 
 void list_del(struct list_node *node)
