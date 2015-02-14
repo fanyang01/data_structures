@@ -31,11 +31,8 @@ int main(void)
 		if(i != tmp) goto FAILED;
 	}
 
-	heap_handle handle[MAXSIZE/2];
-	for(i = 1; i <= MAXSIZE / 2; i++)
-		handle[i - 1] = heap_insert(h, &i);
 	for(i = 0; i < MAXSIZE / 2; i++)
-		increase_priority(h, handle[i], &i);
+		heap_insert(h, &i);
 
 	for(i = MAXSIZE / 2; i < MAXSIZE; i++)
 		heap_insert(h_a, &i);

@@ -8,7 +8,6 @@ typedef int (*cmp_func)(const void *, const void *);
 typedef struct heap_tree {
 	struct heap_tree *siblings;
 	struct heap_tree *childs;
-	struct heap_tree *p;
 	int rank;
 	void *data;
 } heap_tree;
@@ -29,7 +28,5 @@ extern heap *heap_clean(heap *h);
 extern heap *heap_merge(heap *x, heap *y);
 extern heap *heap_pop(heap *h, void *des);
 extern heap_tree *heap_insert(heap *h, const void *data);
-extern heap *increase_priority(heap *h,
-		heap_tree *node, const void *data);
 
 #endif

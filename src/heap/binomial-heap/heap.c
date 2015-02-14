@@ -140,24 +140,6 @@ heap_tree *heap_insert(heap *h, const void *data)
 	return t;
 }
 
-heap *increase_priority(heap *h, heap_tree *x, const void *data)
-{
-	if(!h || !x || !data) return NULL;
-	if(h->compare(x->data, data) > 0) {
-		heap_error("new value has lower priority");
-		return NULL;
-	}
-	copy(x->data, data, h->data_size);
-	heap_tree *p = x->p;
-	while(p && h->compare(p->data, x->data) < 0) {
-		char tmp[h->data_size];
-		copy(tmp, p->data, h->data_size);
-		copy(p->data, x->data, h->data_size);
-		copy(x->data, tmp, h->data_size);
-	}
-	return h;
-}
-
 heap_tree *merge(heap *h, heap_tree *x, heap_tree *y)
 {
 	if(!y) return x;
@@ -180,7 +162,6 @@ heap_tree *merge(heap *h, heap_tree *x, heap_tree *y)
 		}
 		y->siblings = x->childs;
 		x->childs = y;
-		y->p = x;
 		x->rank++;
 		x->siblings = rest;
 		return x;
@@ -202,7 +183,7 @@ heap_tree *new_tree(heap *h, const void *data)
 	}
 	t->data = t_data;
 	t->rank = 0;
-	t->siblings = t->childs = t->p = NULL;
+	t->siblings = t->childs = NULL;
 	copy(t->data, data, h->data_size);
 	return t;
 }
