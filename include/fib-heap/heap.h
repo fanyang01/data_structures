@@ -32,7 +32,7 @@ extern heap *heap_clean(heap *h);
 extern heap_handle heap_insert(heap *h, const void *data);
 extern heap *heap_pop(heap *h, void *des);
 extern heap *heap_merge(heap *x, heap *y);
-extern heap *increase_priority(heap *h,
+extern heap *heap_inc_priority(heap *h,
 		heap_node *x, const void *data);
 
 #endif
