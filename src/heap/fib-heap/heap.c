@@ -109,7 +109,7 @@ heap *heap_merge(heap *x, heap *y)
 	return x;
 }
 
-heap *increase_priority(heap *h, heap_node *x, const void *data)
+heap *heap_inc_priority(heap *h, heap_node *x, const void *data)
 {
 	if(!h || !x || !data) return NULL;
 	if(h->compare(x->data, data) > 0) {
