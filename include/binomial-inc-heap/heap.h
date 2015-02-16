@@ -6,9 +6,10 @@
 
 typedef int (*cmp_func)(const void *, const void *);
 typedef struct heap_tree {
-	struct heap_tree *siblings;
+	struct heap_tree *next;
 	struct heap_tree *childs;
-	struct heap_tree *prev;
+	struct heap_tree **prev;
+	bool first;
 	int rank;
 	void *data;
 } heap_tree;
