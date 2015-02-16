@@ -4,13 +4,10 @@ LIBS=libheap.a
 LIBDIR=../../../lib
 INCDIR=../../../include
 
-$(LIBS): $(LIBS)(heap.o) $(LIBS)(list.o)
+$(LIBS): $(LIBS)(heap.o)
 
 heap.o: heap.c heap.h
-	$(CC) -c -o heap.o heap.c $(CFLAGS) -I$(INCDIR) -L$(LIBDIR) -llist
-
-list.o: $(LIBDIR)/liblist.a
-	ar xv $(LIBDIR)/liblist.a
+	$(CC) -c -o heap.o heap.c $(CFLAGS) -I$(INCDIR)
 
 install:
 	cp $(LIBS) $(LIBDIR)/binomial-heap/
