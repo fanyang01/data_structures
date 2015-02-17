@@ -31,8 +31,8 @@ static heap_tree *merge(heap *h, heap_tree **a, heap_tree **b);
 static heap_tree *new_tree(heap *h, const void *data);
 static void free_list(heap_tree *list);
 static void copy(void *des, const void *src, size_t size);
-static void swap(heap *h, heap_tree *x, heap_tree *p);
- 
+inline static void swap(heap_tree *x, heap_tree *p);
+
 heap *heap_init(size_t data_size, cmp_func f)
 {
 	if(!f) {
@@ -152,6 +152,7 @@ heap_tree *heap_inc_priority(heap *h, heap_tree *node, const void *data)
 		return NULL;
 	}
 	heap_tree *p, *x, *y;
+	heap_tree **root_list = &h->list;
 
 	copy(node->data, data, h->data_size);
 	x = y = node;
@@ -161,11 +162,11 @@ heap_tree *heap_inc_priority(heap *h, heap_tree *node, const void *data)
 		y = SIBLING(y);
 	}
 
-	while(y->prev != &h->list) {
+	while(y->prev != root_list) {
 		p = PARENT(y);
 		if(h->compare(x->data, p->data) > 0) {
 			/* swap x and p */
-			swap(h, x, p);
+			swap(x, p);
 			/* move y to be the first child of x's parent */
 			y = x;
 			while(!IS_FIRST_CHILD(y)) {
@@ -185,15 +186,18 @@ heap_tree *merge(heap *h, heap_tree **a, heap_tree **b)
 	if(!y) return x;
 	if(!x) {
 		y->prev = a;
+		y->first = true;
 		return y;
 	}
 
 	if(x->rank > y->rank) {
 		y = merge(h, &x->next, b);
 		x->next = NULL;
+		/* x->first = true; */
 		if(y->rank < x->rank) {
 			x->next = y;
 			y->prev = &x->next;
+			y->first = false;
 			return x;
 		}
 	}
@@ -210,30 +214,32 @@ heap_tree *merge(heap *h, heap_tree **a, heap_tree **b)
 			x->childs->first = false;
 		}
 		x->childs = y;
+		/* x->first = true; */
 		y->first = true;
 		y->prev = &x->childs;
 		x->rank++;
 		x->next = rest;
-		if(rest) rest->prev = &x->next;
+		if(rest) {
+			rest->prev = &x->next;
+			rest->first = false;
+		}
 		return x;
 	} else {
 		return merge(h, b, a);
 	}
 }
 
-void swap(heap *h, heap_tree *x, heap_tree *p)
+void swap(heap_tree *x, heap_tree *p)
 {
 	*p->prev = x;
-	*x->prev = p;
-	if(p->next) p->next->prev = &x->next;
-	if(x->next) x->next->prev = &p->next;
 	if(IS_FIRST_CHILD(x)) {
-		x->childs = p;
 		p->childs = x->childs;
+		x->childs = p;
 
 		x->prev = p->prev;
-		p->prev = &x->next;
 	} else {
+		*x->prev = p;
+
 		void *tmp = x->childs;
 		x->childs = p->childs;
 		p->childs = tmp;
@@ -242,14 +248,22 @@ void swap(heap *h, heap_tree *x, heap_tree *p)
 		x->prev = p->prev;
 		p->prev = tmp;
 	}
-	if(x->childs) x->childs->prev = &x->childs;
+	x->childs->prev = &x->childs;
 	if(p->childs) p->childs->prev = &p->childs;
-	int tmp = x->rank;
+
+	void *tmp = x->next;
+	x->next = p->next;
+	p->next = tmp;
+	if(p->next) p->next->prev = &p->next;
+	if(x->next) x->next->prev = &x->next;
+
+	int tmp_i = x->rank;
 	x->rank = p->rank;
-	p->rank = x->rank;
-	tmp = x->first;
+	p->rank = tmp_i;
+
+	bool tmp_b = x->first;
 	x->first = p->first;
-	p->first = tmp;
+	p->first = tmp_b;
 }
 
 heap_tree *new_tree(heap *h, const void *data)
