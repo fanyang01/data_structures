@@ -4,7 +4,8 @@
 #include <stdbool.h>
 #include <string.h>
 
-#define error(S) tree_error(__FILE__, __LINE__, __func__, S)
+#define error(S) fprintf(stderr, "%s:%d:%s: %s\n", \
+		__FILE__, __LINE__, __func__, S)
 #define BLACK 0
 #define RED   1
 
@@ -19,8 +20,6 @@ static struct tree *right_rotate(rb_tree *t, struct tree *x);
 static struct tree *double_right_rotate(rb_tree *t, struct tree *x);
 static struct tree *double_left_rotate(rb_tree *t, struct tree *x);
 static void free_node(rb_tree *t, struct tree *node);
-void tree_error(const char *filename, int line,
-		const char *funcname, const char *s);
 static void copy(void *des, const void *src, size_t size);
 
 rb_tree *tree_init(size_t unit_size, cmp_func f)
@@ -202,7 +201,7 @@ void rb_insert_fixup(rb_tree *t, struct tree *x)
 			} else {
 				if(x == x->p->right) { /* case 2 */
 					x = x->p;
-					left_rotate(t, x->p); /* convert to case 3 */
+					left_rotate(t, x); /* convert to case 3 */
 				}
 				x->p->color = BLACK; /* case 3 */
 				x->p->p->color = RED;
@@ -218,7 +217,7 @@ void rb_insert_fixup(rb_tree *t, struct tree *x)
 			} else {
 				if(x == x->p->left) {
 					x = x->p;
-					right_rotate(t, x->p);
+					right_rotate(t, x);
 				}
 				x->p->color = BLACK;
 				x->p->p->color = RED;
@@ -481,13 +480,6 @@ void free_node(rb_tree *t, struct tree *node)
 	free_node(t, node->right);
 	free(node->data);
 	free(node);
-}
-
-void tree_error(const char *filename, int line,
-		const char *funcname, const char *s)
-{
-	fprintf(stderr, "%s:%d:%s: %s\n", filename,
-			line, funcname, s);
 }
 
 void copy(void *des, const void *src, size_t size)
