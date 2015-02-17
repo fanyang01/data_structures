@@ -17,5 +17,9 @@ test:
 	$(CC) -o heap_test heap_test.c -I$(INCDIR) -I$(INCDIR)/binomial-heap -L$(LIBDIR)/binomial-heap -lheap -g && \
 	./heap_test
 
+sort:
+	$(CC) -o sort sort.c -I$(INCDIR) -I$(INCDIR)/binomial-heap -L$(LIBDIR)/binomial-heap -lheap -g && \
+	./sort
+
 clean:
-	rm -f *.o *.a heap_test
+	rm -f *.o *.a heap_test sort
