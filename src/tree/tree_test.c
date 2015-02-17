@@ -4,7 +4,7 @@
 #include <time.h>
 #include <string.h>
 
-#define MAXSIZE 40960
+#define MAXSIZE (1<<19)
 int func(const void *x, const void *y)
 {
 	const int *a = (int *)x;
@@ -26,7 +26,7 @@ int main(void)
 		goto FAILED;
 	}
 	int data[MAXSIZE];
-	int tested[MAXSIZE];
+	char tested[MAXSIZE];
 
 	memset(tested, 0, sizeof(int) * MAXSIZE);
 	for(i = 0; i < MAXSIZE; i++) {
