@@ -5,7 +5,7 @@
 #include <time.h>
 #include <string.h>
 
-#define MAXSIZE 1<<18
+#define MAXSIZE 1<<20
 int compare(const void *x, const void *y)
 {
 	const int *a = (int *)x;
@@ -15,9 +15,9 @@ int compare(const void *x, const void *y)
 	return -1;
 }
 
-long hash_key(const void *data)
+int hash_key(const void *data)
 {
-	return (long)*(int *)data;
+	return *(int *)data;
 }
 
 int main(void)
@@ -35,12 +35,10 @@ int main(void)
 		fprintf(stderr, "failed to initialize hash\n");
 		goto FAILED;
 	}
-	int data[MAXSIZE];
-	int tested[MAXSIZE];
+	char tested[MAXSIZE];
 
-	memset(tested, 0, sizeof(int) * MAXSIZE);
+	memset(tested, 0, MAXSIZE);
 	for(i = 0; i < MAXSIZE; i++) {
-		data[i] = i;
 		if(!hash_insert(h, &i)) {
 			fprintf(stderr, "insert error\n");
 			goto FAILED;
@@ -54,7 +52,7 @@ int main(void)
 		}
 	}
 
-	srand((long)time(0) % (1<<31));
+	srand((unsigned int)time(0));
 	for(i = 0; i < MAXSIZE / 2; i++) {
 		tmp = (int)rand() % MAXSIZE;
 		bool res = hash_delete(h, &tmp);

@@ -6,7 +6,7 @@
 
 #define HASH_INIT_SIZE (1<<12)
 
-typedef long (*hash_func)(const void *);
+typedef int (*hash_func)(const void *);
 typedef int (*cmp_func)(const void *, const void *);
 
 typedef struct hash_list {

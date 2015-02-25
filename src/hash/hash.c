@@ -37,11 +37,11 @@ static hash_list *new_node(hash *h, const void *data);
 static void copy(void *des, const void *src, size_t size);
 
 /* use multiplication method to hash key into some index */
-long hash_gen_index(hash *h, long key)
+int hash_gen_index(hash *h, int key)
 {
 	double f = MUL_FACTOR * (double)key;
-	f -= (double)((long)f);
-	return (long)((double)h->size * f);
+	f -= (double)((int)f);
+	return (int)((double)h->size * f);
 }
 
 /* allocate and initialize a hash structure */
@@ -77,16 +77,29 @@ hash *hash_init(struct hash_init *h_init)
 bool hash_insert(hash *h, const void *data)
 {
 	if(!h) return false;
-	long integer = h->hash(data);
+	int integer = h->hash(data);
 	if(integer < 0) {
 		hash_error("error in genarating index");
 		return false;
 	}
-	long index = hash_gen_index(h, integer);
+	int index = hash_gen_index(h, integer);
 	hash_list *node = new_node(h, data);
 	if(!node) {
 		hash_error("make new node failed");
 		return false;
+	}
+	/* tranverse the list to find data; */
+	/* and if found, delete it */
+	hash_list *x = h->table[index].next;
+	hash_list **prev = &h->table[index].next;
+	while(x != NULL) {
+		if(h->compare(x->data, data) == 0) {
+			*prev = x->next;
+			free_node(x);
+			break;
+		}
+		prev = &x->next;
+		x = x->next;
 	}
 	/* add data to the head of list */
 	node->next = h->table[index].next;
@@ -101,12 +114,12 @@ bool hash_insert(hash *h, const void *data)
 bool hash_delete(hash *h, const void *data)
 {
 	if(!h) return false;
-	long integer = h->hash(data);
+	int integer = h->hash(data);
 	if(integer < 0) {
 		hash_error("error in genarating index");
 		return false;
 	}
-	long index = hash_gen_index(h, integer);
+	int index = hash_gen_index(h, integer);
 
 	/* tranverse the list to find and delete data */
 	hash_list *x = h->table[index].next;
@@ -129,12 +142,12 @@ bool hash_delete(hash *h, const void *data)
 void *hash_search(hash *h, const void *data)
 {
 	if(!h) return NULL;
-	long integer = h->hash(data);
+	int integer = h->hash(data);
 	if(integer < 0) {
 		hash_error("error in genarating index");
 		return false;
 	}
-	long index = hash_gen_index(h, integer);
+	int index = hash_gen_index(h, integer);
 
 	/* tranverse the list to find data */
 	hash_list *x = h->table[index].next;
@@ -149,7 +162,7 @@ void *hash_search(hash *h, const void *data)
 void hash_free(hash *h)
 {
 	if(!h) return;
-	long i;
+	int i;
 
 	for(i = 0; i < h->size; i++) {
 		hash_list *x = h->table[i].next;
