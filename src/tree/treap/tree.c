@@ -52,7 +52,8 @@ treap *tree_insert(treap *t, const void *data)
 	return t;
 }
 
-#define PRIORITY(x) ((x) ? (x)->priority : -1)
+/* #define PRIORITY(x) ((x) ? (x)->priority : -1) */
+#define PRIORITY(x) ((x)->priority)
 
 struct tree *insert(treap *t, struct tree **root, struct tree *node)
 {
