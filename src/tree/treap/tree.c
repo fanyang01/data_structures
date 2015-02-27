@@ -13,8 +13,8 @@ static struct tree *insert(treap *t,
 		struct tree **root, struct tree *node);
 static struct tree **minimum(const treap *t, struct tree **p);
 static struct tree *new_node(const treap *t, const void *data);
-static struct tree *left_rotate(treap *t, struct tree **x_p);
-static struct tree *right_rotate(treap *t, struct tree **x_p);
+static struct tree *left_rotate(struct tree **x_p);
+static struct tree *right_rotate(struct tree **x_p);
 static void free_node(treap *t, struct tree *node);
 static void copy(void *des, const void *src, size_t size);
 static int tree_rand(void);
@@ -65,11 +65,11 @@ struct tree *insert(treap *t, struct tree **root, struct tree *node)
 	} else if(t->compare(node->data, r->data) < 0) {
 		insert(t, &r->left, node);
 		if(PRIORITY(r) < PRIORITY(r->left))
-			right_rotate(t, root);
+			right_rotate(root);
 	} else {
 		insert(t, &r->right, node);
 		if(PRIORITY(r) < PRIORITY(r->right))
-			left_rotate(t, root);
+			left_rotate(root);
 	}
 	return *root;
 }
@@ -193,7 +193,7 @@ struct tree *new_node(const treap *t, const void *data)
  *        / \
  *       a   b
  */
-struct tree *left_rotate(treap *t, struct tree **x_p)
+struct tree *left_rotate(struct tree **x_p)
 {
 	struct tree *x = *x_p;
 	struct tree *y = x->right;
@@ -216,7 +216,7 @@ struct tree *left_rotate(treap *t, struct tree **x_p)
  *            / \
  *           b   c
  */
-struct tree *right_rotate(treap *t, struct tree **x_p)
+struct tree *right_rotate(struct tree **x_p)
 {
 	struct tree *x = *x_p;
 	struct tree *y = x->left;
