@@ -7,10 +7,9 @@
 typedef int (*cmp_func)(const void *, const void *);
 
 struct tree {
-	struct tree *p;
 	struct tree *left;
 	struct tree *right;
-	long priority;
+	int priority;
 	void *data;
 };
 
