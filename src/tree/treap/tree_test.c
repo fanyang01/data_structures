@@ -25,12 +25,10 @@ int main(void)
 		fprintf(stderr, "failed to initialize tree\n");
 		goto FAILED;
 	}
-	int data[MAXSIZE];
 	char tested[MAXSIZE];
 
-	memset(tested, 0, sizeof(int) * MAXSIZE);
+	memset(tested, 0, MAXSIZE);
 	for(i = 0; i < MAXSIZE; i++) {
-		data[i] = i;
 		if(tree_insert(t, &i) == NULL) {
 			fprintf(stderr, "insert error\n");
 			goto FAILED;
@@ -50,12 +48,12 @@ int main(void)
 		res = tree_delete(t, &tmp);
 		if(!res) {
 			if(!tested[tmp]) {
-				fprintf(stderr, "search error\n");
+				fprintf(stderr, "delete error\n");
 				goto FAILED;
 			}
 		} else {
 			if(tested[tmp]) {
-				fprintf(stderr, "search error\n");
+				fprintf(stderr, "delete error\n");
 				goto FAILED;
 			}
 			tested[tmp] = 1;

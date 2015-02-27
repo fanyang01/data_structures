@@ -7,15 +7,14 @@
 #define error(S) fprintf(stderr, "%s:%d:%s: %s\n", \
 		__FILE__, __LINE__, __func__, S)
 
-static struct tree *search(treap *t, const void *data);
-static void transplant(treap *t, struct tree *to, struct tree *from);
-static void insert_fixup(treap *t, struct tree *node);
-static struct tree *minimum(treap *t, struct tree *node);
-static struct tree *new_node(treap *t, const void *data);
-static struct tree *left_rotate(treap *t, struct tree *x);
-static struct tree *right_rotate(treap *t, struct tree *x);
-static struct tree *double_right_rotate(treap *t, struct tree *x);
-static struct tree *double_left_rotate(treap *t, struct tree *x);
+static struct tree **search(const treap *t,
+		struct tree **root, const void *data);
+static struct tree *insert(treap *t,
+		struct tree **root, struct tree *node);
+static struct tree **minimum(const treap *t, struct tree **p);
+static struct tree *new_node(const treap *t, const void *data);
+static struct tree *left_rotate(treap *t, struct tree **x_p);
+static struct tree *right_rotate(treap *t, struct tree **x_p);
 static void free_node(treap *t, struct tree *node);
 static void copy(void *des, const void *src, size_t size);
 static int tree_rand(void);
@@ -41,38 +40,44 @@ treap *tree_init(size_t unit_size, cmp_func f)
 treap *tree_insert(treap *t, const void *data)
 {
 	if(!t || !data) return NULL;
-	struct tree *x = t->root;
-	struct tree *p = NULL;
+
 	struct tree *node = new_node(t, data);
 	if(!node) {
 		error("failed to make new node");
 		return NULL;
 	}
-	while(x) {
-		p = x;
-		if(t->compare(node->data, x->data) < 0)
-			x = x->left;
-		else
-			x = x->right;
-	}
-	node->p = p;
-	if(p == NULL) {
-		t->root = node;
-	} else if(t->compare(node->data, p->data) < 0) {
-		p->left = node;
-	} else {
-		p->right = node;
-	}
-	insert_fixup(t, node);
+
+	insert(t, &t->root, node);
 	t->size++;
 	return t;
 }
 
+#define PRIORITY(x) ((x) ? (x)->priority : -1)
+
+struct tree *insert(treap *t, struct tree **root, struct tree *node)
+{
+	struct tree *r = *root;
+
+	if(!r) {
+		*root = node;
+		return node;
+	} else if(t->compare(node->data, r->data) < 0) {
+		insert(t, &r->left, node);
+		if(PRIORITY(r) < PRIORITY(r->left))
+			right_rotate(t, root);
+	} else {
+		insert(t, &r->right, node);
+		if(PRIORITY(r) < PRIORITY(r->right))
+			left_rotate(t, root);
+	}
+	return *root;
+}
+
 void *tree_search(treap *t, const void *data)
 {
-	struct tree *node = search(t, data);
+	struct tree **node = search(t, &t->root, data);
 	if(!node) return NULL;
-	return node->data;
+	return (*node)->data;
 }
 
 treap *tree_delete(treap *t, const void *data)
@@ -80,34 +85,35 @@ treap *tree_delete(treap *t, const void *data)
 	if(!t) return NULL;
 	if(!data) return t;
 	struct tree *x, *y;
-	struct tree *node = search(t, data);
-	if(!node) {
+	struct tree **x_p, **y_p;
+
+	x_p = search(t, &t->root, data);
+	if(!x_p) {
 		/* error("not found"); */
 		return NULL;
 	}
 
-	y = node;
-	if(node->left == NULL) {
-		transplant(t, node, node->right);
-	} else if(node->right == NULL) {
-		transplant(t, node, node->left);
+	x = *x_p;
+	if(x->left == NULL) {
+		*x_p = x->right;
+	} else if(x->right == NULL) {
+		*x_p = x->left;
 	} else {
-		y = minimum(t, node->right);
+		y_p = minimum(t, &x->right);
+		y = *y_p;
 		/*
-		 * when y is the right child of node,
+		 * when y is the right child of x,
 		 * no need to move y->right
 		 */
-		if(y->p != node) {
-			transplant(t, y, y->right);
-			y->right = node->right;
-			node->right->p = y;
+		if(x->right != y) {
+			*y_p = y->right;
+			y->right = x->right;
 		}
-		y->left = node->left;
-		node->left->p = y;
-		transplant(t, node, y);
+		y->left = x->left;
+		*x_p = y;
 	}
-	free(node->data);
-	free(node);
+	free(x->data);
+	free(x);
 	t->size--;
 	return t;
 }
@@ -119,75 +125,56 @@ void tree_free(treap *t)
 	free(t);
 }
 
-void insert_fixup(treap *t, struct tree *node)
+struct tree **search(const treap *t,
+		struct tree **root, const void *data)
 {
-	while(node->p) {
-		if(node->p->priority <= node->priority)
-			break;
-		if(node->p->left == node)
-			right_rotate(t, node->p);
-		else
-			left_rotate(t, node->p);
-	}
-}
-
-struct tree *search(treap *t, const void *data)
-{
-	struct tree *x = t->root;
+	struct tree *x = *root;
+	struct tree **p = root;
 	int res;
 
 	while(x != NULL) {
 		if((res = t->compare(data, x->data)) == 0) {
-			return x;
+			return p;
 		} else if(res < 0) {
+			p = &x->left;
 			x = x->left;
 		} else {
+			p = &x->right;
 			x = x->right;
 		}
 	}
 	return NULL;
 }
 
-void transplant(treap *t, struct tree *to, struct tree *from)
+struct tree **minimum(const treap *t, struct tree **p)
 {
-	if(to->p == NULL) {
-		t->root = from;
-	} else if(to == to->p->left) {
-		to->p->left = from;
-	} else {
-		to->p->right = from;
-	}
-	if(from) from->p = to->p;
-}
+	struct tree *node = *p;
 
-struct tree *minimum(treap *t, struct tree *node)
-{
 	while(node->left != NULL) {
+		p = &node->left;
 		node = node->left;
 	}
-	return node;
+	return p;
 }
 
-struct tree *new_node(treap *t, const void *data)
+struct tree *new_node(const treap *t, const void *data)
 {
 	if(!t) return NULL;
+
 	struct tree *node = (struct tree *)
 		malloc(sizeof(struct tree));
 	if(!node) {
 		error("failed to allocate memory");
 		return NULL;
 	}
-	if(data) {
-		node->data = malloc(t->unit_size);
-		if(!node->data) {
-			error("failed to allocate memory");
-			return NULL;
-		}
-		copy(node->data, data, t->unit_size);
-	} else {
-		node->data = NULL;
+	node->data = malloc(t->unit_size);
+	if(!node->data) {
+		error("failed to allocate memory");
+		return NULL;
 	}
-	node->p = node->left = node->right = NULL;
+
+	copy(node->data, data, t->unit_size);
+	node->left = node->right = NULL;
 	node->priority = tree_rand();
 	return node;
 }
@@ -205,14 +192,13 @@ struct tree *new_node(treap *t, const void *data)
  *        / \
  *       a   b
  */
-struct tree *left_rotate(treap *t, struct tree *x)
+struct tree *left_rotate(treap *t, struct tree **x_p)
 {
+	struct tree *x = *x_p;
 	struct tree *y = x->right;
-	transplant(t, x, y);
 	x->right = y->left;
-	if(y->left) y->left->p = x;
 	y->left = x;
-	x->p = y;
+	*x_p = y;
 	return y;
 }
 
@@ -229,77 +215,14 @@ struct tree *left_rotate(treap *t, struct tree *x)
  *            / \
  *           b   c
  */
-struct tree *right_rotate(treap *t, struct tree *x)
+struct tree *right_rotate(treap *t, struct tree **x_p)
 {
+	struct tree *x = *x_p;
 	struct tree *y = x->left;
-	transplant(t, x, y);
 	x->left = y->right;
-	if(y->right) y->right->p = x;
 	y->right = x;
-	x->p = y;
+	*x_p = y;
 	return y;
-}
-
-/*
- *              x
- *             / \
- *            y   d
- *           / \
- *          a   z
- *             / \
- *            b   c
- *  ->
- *              z
- *            /   \
- *           y     x
- *          / \   / \
- *         a   b c   d
- */
-struct tree *double_right_rotate(treap *t, struct tree *x)
-{
-	struct tree *y = x->left;
-	struct tree *z = y->right;
-	transplant(t, x, z);
-	y->right = z->left;
-	z->left->p = y;
-	x->left = z->right;
-	z->right->p = x;
-	z->left = y;
-	y->p = z;
-	z->right = x;
-	x->p = z;
-	return z;
-}
-
-/*
- *            x
- *           / \
- *          a   y
- *             / \
- *            z   d
- *           / \
- *          b   c
- * ->
- *            z
- *          /   \
- *         x     y
- *        / \   / \
- *       a   b c   d
- */
-struct tree *double_left_rotate(treap *t, struct tree *x)
-{
-	struct tree *y = x->right;
-	struct tree *z = y->left;
-	transplant(t, x, z);
-	y->left = z->right;
-	z->right->p = y;
-	x->right = z->left;
-	z->left->p = x;
-	z->right = y;
-	y->p = z;
-	z->left = x;
-	x->p = z;
-	return z;
 }
 
 void free_node(treap *t, struct tree *node)
