@@ -4,14 +4,28 @@
 #include <stdbool.h>
 #include <string.h>
 
+/* If lazy deletion is defined, ordinary BST deletion will be performed, */
+/* only height infomation will be updated without any rotation. */
+/* #define LAZY_DELETION 1 */
+
+#define HEIGHT(x) ((x) ? (x)->height : -1)
+#define MAX(x, y) ((x) > (y) ? (x) : (y))
+#define DIFF(x) (HEIGHT(x->left) - HEIGHT(x->right))
+#define UPDATE_HEIGHT(x) { \
+	(x)->height = MAX(HEIGHT((x)->left), HEIGHT((x)->right)) + 1; \
+}
+
 #define error(S) fprintf(stderr, "%s:%d:%s: %s\n", \
 		__FILE__, __LINE__, __func__, S)
-
+static struct tree *balance(struct tree **root);
+static struct tree *d_balance(struct tree **root);
 static struct tree **search(const avl_tree *t,
 		struct tree **root, const void *data);
 static struct tree *insert(avl_tree *t,
 		struct tree **root, struct tree *node);
-static struct tree **minimum(const avl_tree *t, struct tree **p);
+static struct tree *delete(avl_tree *t,
+		struct tree **root, const void *data);
+static struct tree *delete_min(struct tree **p);
 static struct tree *new_node(const avl_tree *t, const void *data);
 static struct tree *left_rotate(struct tree **x_p);
 static struct tree *right_rotate(struct tree **x_p);
@@ -19,6 +33,7 @@ static struct tree *double_right_rotate(struct tree **x_p);
 static struct tree *double_left_rotate(struct tree **x_p);
 static void free_node(avl_tree *t, struct tree *node);
 static void copy(void *des, const void *src, size_t size);
+
 
 avl_tree *tree_init(size_t unit_size, cmp_func f)
 {
@@ -53,12 +68,6 @@ avl_tree *tree_insert(avl_tree *t, const void *data)
 	return t;
 }
 
-#define HEIGHT(x) ((x) ? (x)->height : -1)
-#define MAX(x, y) ((x) > (y) ? (x) : (y))
-#define CORRECT_HEIGHT(x) { \
-	x->height = MAX(HEIGHT(x->left), HEIGHT(x->right)) + 1; \
-}
-
 struct tree *insert(avl_tree *t, struct tree **root, struct tree *node)
 {
 	struct tree *r = *root;
@@ -66,29 +75,14 @@ struct tree *insert(avl_tree *t, struct tree **root, struct tree *node)
 	if(!r) {
 		*root = node;
 		return node;
-	} else if(t->compare(node->data, r->data) < 0) {
+	}
+	if(t->compare(node->data, r->data) < 0) {
 		insert(t, &r->left, node);
-		if(HEIGHT(r->left) - HEIGHT(r->right) == 2) {
-			if(t->compare(node->data, r->left->data) < 0) {
-				right_rotate(root);
-			} else {
-				double_right_rotate(root);
-			}
-		} else {
-			CORRECT_HEIGHT(r);
-		}
 	} else {
 		insert(t, &r->right, node);
-		if(HEIGHT(r->right) - HEIGHT(r->left) == 2) {
-			if(t->compare(node->data, r->right->data) > 0) {
-				left_rotate(root);
-			} else {
-				double_left_rotate(root);
-			}
-		} else {
-			CORRECT_HEIGHT(r);
-		}
 	}
+	UPDATE_HEIGHT(r);
+	balance(root);
 	return *root;
 }
 
@@ -97,51 +91,6 @@ void *tree_search(avl_tree *t, const void *data)
 	struct tree **node = search(t, &t->root, data);
 	if(!node) return NULL;
 	return (*node)->data;
-}
-
-avl_tree *tree_delete(avl_tree *t, const void *data)
-{
-	if(!t) return NULL;
-	if(!data) return t;
-	struct tree *x, *y;
-	struct tree **x_p, **y_p;
-
-	x_p = search(t, &t->root, data);
-	if(!x_p) {
-		/* error("not found"); */
-		return NULL;
-	}
-
-	x = *x_p;
-	if(x->left == NULL) {
-		*x_p = x->right;
-	} else if(x->right == NULL) {
-		*x_p = x->left;
-	} else {
-		y_p = minimum(t, &x->right);
-		y = *y_p;
-		/*
-		 * when y is the right child of x,
-		 * no need to move y->right
-		 */
-		if(x->right != y) {
-			*y_p = y->right;
-			y->right = x->right;
-		}
-		y->left = x->left;
-		*x_p = y;
-	}
-	free(x->data);
-	free(x);
-	t->size--;
-	return t;
-}
-
-void tree_free(avl_tree *t)
-{
-	if(!t) return;
-	free_node(t, t->root);
-	free(t);
 }
 
 struct tree **search(const avl_tree *t,
@@ -165,15 +114,76 @@ struct tree **search(const avl_tree *t,
 	return NULL;
 }
 
-struct tree **minimum(const avl_tree *t, struct tree **p)
+avl_tree *tree_delete(avl_tree *t, const void *data)
 {
-	struct tree *node = *p;
+	if(!t) return NULL;
+	if(!data) return t;
 
-	while(node->left != NULL) {
-		p = &node->left;
-		node = node->left;
+	if(!delete(t, &t->root, data)) {
+		return NULL;
 	}
-	return p;
+	t->size--;
+	return t;
+}
+
+struct tree *delete(avl_tree *t,
+		struct tree **root, const void *data)
+{
+	struct tree *r = *root;
+	if(!r) return NULL;
+	struct tree *ret, *y;
+
+	if(t->compare(data, r->data) < 0) {
+		ret = delete(t, &r->left, data);
+	} else if(t->compare(data, r->data) > 0) {
+		ret = delete(t, &r->right, data);
+	} else {
+		ret = r;
+		if(!r->right) {
+			*root = r->left;
+			return ret;
+		} else if(!r->left) {
+			*root = r->right;
+			return ret;
+		} else {
+			y = delete_min(&r->right);
+			y->right = r->right;
+			y->left = r->left;
+			*root = y;
+		}
+	}
+	UPDATE_HEIGHT(*root);
+
+#ifndef LAZY_DELETION
+	d_balance(root);
+#endif
+
+	return ret;
+}
+
+struct tree *delete_min(struct tree **p)
+{
+	struct tree *x = *p;
+
+	if(x->left) {
+		x = delete_min(&x->left);
+		UPDATE_HEIGHT(*p);
+
+#ifndef LAZY_DELETION
+	d_balance(p);
+#endif
+
+	} else {
+		*p = x->right;
+	}
+	return x;
+}
+
+void tree_free(avl_tree *t)
+{
+	if(!t) return;
+	free_node(t, t->root);
+	free(t);
 }
 
 struct tree *new_node(const avl_tree *t, const void *data)
@@ -198,6 +208,58 @@ struct tree *new_node(const avl_tree *t, const void *data)
 	return node;
 }
 
+struct tree *balance(struct tree **root)
+{
+	struct tree *r = *root;
+	int diff;
+
+	diff = DIFF(r);
+	if(diff == 2) {
+		if(DIFF(r->left) == 1) {
+			right_rotate(root);
+		} else {
+			double_right_rotate(root);
+		}
+	} else if(diff == -2) {
+		if(DIFF(r->right) == -1) {
+			left_rotate(root);
+		} else {
+			double_left_rotate(root);
+		}
+	}
+	return *root;
+}
+
+/*
+ * Different from insertion balance, in which if a node is
+ * of balance factor 2 or -2, it's left/right child must be
+ * of balance factor 1/-1, in deletion balance,
+ * unbalanced nodes' childs can have balance factor 0.
+ * It's easy to merge these two functions into one,
+ * but this difference should be realized.
+ */
+struct tree *d_balance(struct tree **root)
+{
+	struct tree *r = *root;
+	int diff;
+
+	diff = DIFF(r);
+	if(diff == 2) {
+		if(DIFF(r->left) >= 0) {
+			right_rotate(root);
+		} else {
+			double_right_rotate(root);
+		}
+	} else if(diff == -2) {
+		if(DIFF(r->right) <= 0) {
+			left_rotate(root);
+		} else {
+			double_left_rotate(root);
+		}
+	}
+	return *root;
+}
+
 /*
  *           x
  *          / \
@@ -218,8 +280,8 @@ struct tree *left_rotate(struct tree **x_p)
 	x->right = y->left;
 	y->left = x;
 	*x_p = y;
-	CORRECT_HEIGHT(x);
-	CORRECT_HEIGHT(y);
+	UPDATE_HEIGHT(x);
+	UPDATE_HEIGHT(y);
 	return y;
 }
 
@@ -243,8 +305,8 @@ struct tree *right_rotate(struct tree **x_p)
 	x->left = y->right;
 	y->right = x;
 	*x_p = y;
-	CORRECT_HEIGHT(x);
-	CORRECT_HEIGHT(y);
+	UPDATE_HEIGHT(x);
+	UPDATE_HEIGHT(y);
 	return y;
 }
 
@@ -274,9 +336,9 @@ struct tree *double_right_rotate(struct tree **x_p)
 	x->left = z->right;
 	z->left = y;
 	z->right = x;
-	CORRECT_HEIGHT(x);
-	CORRECT_HEIGHT(y);
-	CORRECT_HEIGHT(z);
+	UPDATE_HEIGHT(x);
+	UPDATE_HEIGHT(y);
+	UPDATE_HEIGHT(z);
 	return z;
 }
 
@@ -306,9 +368,9 @@ struct tree *double_left_rotate(struct tree **x_p)
 	x->right = z->left;
 	z->right = y;
 	z->left = x;
-	CORRECT_HEIGHT(x);
-	CORRECT_HEIGHT(y);
-	CORRECT_HEIGHT(z);
+	UPDATE_HEIGHT(x);
+	UPDATE_HEIGHT(y);
+	UPDATE_HEIGHT(z);
 	return z;
 }
 
