@@ -111,6 +111,7 @@ treap *tree_delete(treap *t, const void *data)
 			y->right = x->right;
 		}
 		y->left = x->left;
+		y->priority = x->priority;
 		*x_p = y;
 	}
 	free(x->data);
