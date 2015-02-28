@@ -19,7 +19,7 @@ int main(void)
 	avl_tree *t;
 	int i, tmp;
 
-	srand((unsigned int)time(NULL));
+	/* srand((unsigned int)time(NULL)); */
 	t = tree_init(sizeof(int), func);
 	if(!t) {
 		fprintf(stderr, "failed to initialize tree\n");
