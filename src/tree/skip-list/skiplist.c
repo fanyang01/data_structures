@@ -141,7 +141,7 @@ bool skip_delete(skip_list *s, void *data)
 	free_node(x);
 
 	while(s->level > 0 && s->header->forwards[s->level] == s->nil) {
-		s->header->forwards[s->level] = NULL;
+		s->header->forwards[s->level] = s->nil;
 		s->level--;
 	}
 	return true;
