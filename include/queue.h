@@ -15,9 +15,9 @@ struct queue_element {
 };
 
 queue *queue_init(size_t unit_size);
-bool pop(queue *s, void *des);
-bool push(queue *s, const void *data);
-bool top(const queue *s, void *des);
+bool dequeue(queue *s, void *des);
+bool enqueue(queue *s, const void *data);
+bool queue_head(const queue *s, void *des);
 void queue_free(queue *s);
 
 #endif

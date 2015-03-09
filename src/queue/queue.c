@@ -21,7 +21,7 @@ queue *queue_init(size_t unit_size)
 	return new;
 }
 
-bool pop(queue *s, void *des)
+bool dequeue(queue *s, void *des)
 {
 	if(!s || !des) return false;
 	if(list_is_empty(&s->list)) return false;
@@ -35,7 +35,7 @@ bool pop(queue *s, void *des)
 	return true;
 }
 
-bool push(queue *s, const void *data)
+bool enqueue(queue *s, const void *data)
 {
 	if(!s) return false;
 	struct queue_element *new;
@@ -43,7 +43,7 @@ bool push(queue *s, const void *data)
 
 	element = malloc(sizeof(struct queue_element) + s->unit_size);
 	if(!element) {
-		queue_error("push: failed to allocate memory");
+		queue_error("enqueue: failed to allocate memory");
 		return false;
 	}
 	new = (struct queue_element *)element;
@@ -54,7 +54,7 @@ bool push(queue *s, const void *data)
 	return true;
 }
 
-bool top(const queue *s, void *des)
+bool queue_head(const queue *s, void *des)
 {
 	struct queue_element *tmp;
 
