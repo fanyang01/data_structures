@@ -6,7 +6,7 @@
 
 typedef struct queue {
 	struct list_head list;
-	size_t unit_size;
+	size_t data_size;
 } queue;
 
 struct queue_element {
@@ -14,7 +14,7 @@ struct queue_element {
 	void *data;
 };
 
-queue *queue_init(size_t unit_size);
+queue *queue_init(size_t data_size);
 bool dequeue(queue *s, void *des);
 bool enqueue(queue *s, const void *data);
 bool queue_head(const queue *s, void *des);

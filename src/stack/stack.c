@@ -8,7 +8,7 @@
 		__FILE__, __LINE__, __func__, E)
 static void copy(void *des, const void *src, size_t size);
 
-stack *stack_init(size_t unit_size)
+stack *stack_init(size_t data_size)
 {
 	stack *new;
 
@@ -17,7 +17,7 @@ stack *stack_init(size_t unit_size)
 		return NULL;
 	}
 	INIT_LIST_HEAD(&new->list);
-	new->unit_size = unit_size;
+	new->data_size = data_size;
 	return new;
 }
 
@@ -29,7 +29,7 @@ bool pop(stack *s, void *des)
 
 	tmp = (struct stack_element *)list_head(&s->list);
 	if(!tmp) return false;
-	copy(des, tmp->data, s->unit_size);
+	copy(des, tmp->data, s->data_size);
 	list_del(list_head(&s->list));
 	free(tmp);
 	return true;
@@ -41,7 +41,7 @@ bool push(stack *s, const void *data)
 	struct stack_element *new;
 	void *element;
 
-	element = malloc(sizeof(struct stack_element) + s->unit_size);
+	element = malloc(sizeof(struct stack_element) + s->data_size);
 	if(!element) {
 		stack_error("push: failed to allocate memory");
 		return false;
@@ -49,7 +49,7 @@ bool push(stack *s, const void *data)
 	new = (struct stack_element *)element;
 	new->data = element + sizeof(struct stack_element);
 
-	copy(new->data, data, s->unit_size);
+	copy(new->data, data, s->data_size);
 	list_add_head(&s->list, &new->list);
 	return true;
 }
@@ -63,7 +63,7 @@ bool top(const stack *s, void *des)
 	tmp = (struct stack_element *)
 		list_head((struct list_head *)(&s->list));
 	if(!tmp) return false;
-	copy(des, tmp->data, s->unit_size);
+	copy(des, tmp->data, s->data_size);
 	return true;
 }
 

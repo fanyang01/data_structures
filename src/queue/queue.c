@@ -8,7 +8,7 @@
 		__FILE__, __LINE__, __func__, E)
 static void copy(void *des, const void *src, size_t size);
 
-queue *queue_init(size_t unit_size)
+queue *queue_init(size_t data_size)
 {
 	queue *new;
 
@@ -17,7 +17,7 @@ queue *queue_init(size_t unit_size)
 		return NULL;
 	}
 	INIT_LIST_HEAD(&new->list);
-	new->unit_size = unit_size;
+	new->data_size = data_size;
 	return new;
 }
 
@@ -29,7 +29,7 @@ bool dequeue(queue *s, void *des)
 
 	tmp = (struct queue_element *)list_head(&s->list);
 	if(!tmp) return false;
-	copy(des, tmp->data, s->unit_size);
+	copy(des, tmp->data, s->data_size);
 	list_del(list_head(&s->list));
 	free(tmp);
 	return true;
@@ -41,7 +41,7 @@ bool enqueue(queue *s, const void *data)
 	struct queue_element *new;
 	void *element;
 
-	element = malloc(sizeof(struct queue_element) + s->unit_size);
+	element = malloc(sizeof(struct queue_element) + s->data_size);
 	if(!element) {
 		queue_error("enqueue: failed to allocate memory");
 		return false;
@@ -49,7 +49,7 @@ bool enqueue(queue *s, const void *data)
 	new = (struct queue_element *)element;
 	new->data = element + sizeof(struct queue_element);
 
-	copy(new->data, data, s->unit_size);
+	copy(new->data, data, s->data_size);
 	list_add_tail(&s->list, &new->list);
 	return true;
 }
@@ -63,7 +63,7 @@ bool queue_head(const queue *s, void *des)
 	tmp = (struct queue_element *)
 		list_head((struct list_head *)(&s->list));
 	if(!tmp) return false;
-	copy(des, tmp->data, s->unit_size);
+	copy(des, tmp->data, s->data_size);
 	return true;
 }
 
