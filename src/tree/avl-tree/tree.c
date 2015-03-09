@@ -35,7 +35,7 @@ static void free_node(avl_tree *t, struct tree *node);
 static void copy(void *des, const void *src, size_t size);
 
 
-avl_tree *tree_init(size_t unit_size, cmp_func f)
+avl_tree *tree_init(size_t data_size, cmp_func f)
 {
 	if(!f) {
 		error("compare function missed");
@@ -46,7 +46,7 @@ avl_tree *tree_init(size_t unit_size, cmp_func f)
 		error("failed to allocate memory");
 		return NULL;
 	}
-	t->unit_size = unit_size;
+	t->data_size = data_size;
 	t->size = 0;
 	t->compare = f;
 	t->root = NULL;
@@ -114,14 +114,16 @@ struct tree **search(const avl_tree *t,
 	return NULL;
 }
 
-avl_tree *tree_delete(avl_tree *t, const void *data)
+avl_tree *tree_delete(avl_tree *t, void *data)
 {
 	if(!t) return NULL;
 	if(!data) return t;
 
-	if(!delete(t, &t->root, data)) {
+	struct tree *node = delete(t, &t->root, data);
+	if(!node) {
 		return NULL;
 	}
+	copy(data, node->data, t->data_size);
 	t->size--;
 	return t;
 }
@@ -196,13 +198,13 @@ struct tree *new_node(const avl_tree *t, const void *data)
 		error("failed to allocate memory");
 		return NULL;
 	}
-	node->data = malloc(t->unit_size);
+	node->data = malloc(t->data_size);
 	if(!node->data) {
 		error("failed to allocate memory");
 		return NULL;
 	}
 
-	copy(node->data, data, t->unit_size);
+	copy(node->data, data, t->data_size);
 	node->left = node->right = NULL;
 	node->height = 0;
 	return node;

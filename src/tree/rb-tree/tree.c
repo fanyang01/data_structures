@@ -22,7 +22,7 @@ static struct tree *double_left_rotate(rb_tree *t, struct tree *x);
 static void free_node(rb_tree *t, struct tree *node);
 static void copy(void *des, const void *src, size_t size);
 
-rb_tree *tree_init(size_t unit_size, cmp_func f)
+rb_tree *tree_init(size_t data_size, cmp_func f)
 {
 	if(!f) {
 		error("compare function missed");
@@ -43,7 +43,7 @@ rb_tree *tree_init(size_t unit_size, cmp_func f)
 	nil->left = nil;
 	nil->right = nil;
 	nil->color = BLACK;
-	t->unit_size = unit_size;
+	t->data_size = data_size;
 	t->size = 0;
 	t->compare = f;
 	t->nil = nil;
@@ -91,7 +91,7 @@ void *tree_search(rb_tree *t, const void *data)
 	return node->data;
 }
 
-rb_tree *tree_delete(rb_tree *t, const void *data)
+rb_tree *tree_delete(rb_tree *t, void *data)
 {
 	if(!t) return NULL;
 	if(!data) return t;
@@ -102,6 +102,8 @@ rb_tree *tree_delete(rb_tree *t, const void *data)
 		/* error("not found"); */
 		return NULL;
 	}
+	copy(data, node->data, t->data_size);
+
 	y = node;
 	prev_color = node->color;
 	if(node->left == t->nil) {
@@ -355,12 +357,12 @@ struct tree *new_node(rb_tree *t, const void *data)
 		return NULL;
 	}
 	if(data) {
-		node->data = malloc(t->unit_size);
+		node->data = malloc(t->data_size);
 		if(!node->data) {
 			error("failed to allocate memory");
 			return NULL;
 		}
-		copy(node->data, data, t->unit_size);
+		copy(node->data, data, t->data_size);
 	} else {
 		node->data = NULL;
 	}

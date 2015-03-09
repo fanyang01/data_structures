@@ -23,7 +23,7 @@ typedef struct {
 extern treap *tree_init(size_t unit_size, cmp_func f);
 extern treap *tree_insert(treap *t, const void *data);
 extern void *tree_search(treap *t, const void *data);
-extern treap *tree_delete(treap *t, const void *data);
+extern treap *tree_delete(treap *t, void *data);
 extern void tree_free(treap *t);
 
 #endif

@@ -25,7 +25,7 @@ typedef struct {
 extern rb_tree *tree_init(size_t unit_size, cmp_func f);
 extern rb_tree *tree_insert(rb_tree *t, const void *data);
 extern void *tree_search(rb_tree *t, const void *data);
-extern rb_tree *tree_delete(rb_tree *t, const void *data);
+extern rb_tree *tree_delete(rb_tree *t, void *data);
 extern void tree_free(rb_tree *t);
 
 #endif

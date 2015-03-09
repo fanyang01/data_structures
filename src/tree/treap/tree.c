@@ -19,7 +19,7 @@ static void free_node(treap *t, struct tree *node);
 static void copy(void *des, const void *src, size_t size);
 static int tree_rand(void);
 
-treap *tree_init(size_t unit_size, cmp_func f)
+treap *tree_init(size_t data_size, cmp_func f)
 {
 	if(!f) {
 		error("compare function missed");
@@ -30,7 +30,7 @@ treap *tree_init(size_t unit_size, cmp_func f)
 		error("failed to allocate memory");
 		return NULL;
 	}
-	t->unit_size = unit_size;
+	t->data_size = data_size;
 	t->size = 0;
 	t->compare = f;
 	t->root = NULL;
@@ -81,7 +81,7 @@ void *tree_search(treap *t, const void *data)
 	return (*node)->data;
 }
 
-treap *tree_delete(treap *t, const void *data)
+treap *tree_delete(treap *t, void *data)
 {
 	if(!t) return NULL;
 	if(!data) return t;
@@ -93,8 +93,9 @@ treap *tree_delete(treap *t, const void *data)
 		/* error("not found"); */
 		return NULL;
 	}
-
 	x = *x_p;
+	copy(data, x->data, t->data_size);
+
 	if(x->left == NULL) {
 		*x_p = x->right;
 	} else if(x->right == NULL) {
@@ -169,13 +170,13 @@ struct tree *new_node(const treap *t, const void *data)
 		error("failed to allocate memory");
 		return NULL;
 	}
-	node->data = malloc(t->unit_size);
+	node->data = malloc(t->data_size);
 	if(!node->data) {
 		error("failed to allocate memory");
 		return NULL;
 	}
 
-	copy(node->data, data, t->unit_size);
+	copy(node->data, data, t->data_size);
 	node->left = node->right = NULL;
 	node->priority = tree_rand();
 	return node;
