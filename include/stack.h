@@ -6,7 +6,7 @@
 
 typedef struct stack {
 	struct list_head list;
-	size_t unit_size;
+	size_t data_size;
 } stack;
 
 struct stack_element {
@@ -14,7 +14,7 @@ struct stack_element {
 	void *data;
 };
 
-stack *stack_init(size_t unit_size);
+stack *stack_init(size_t data_size);
 bool pop(stack *s, void *des);
 bool push(stack *s, const void *data);
 bool top(const stack *s, void *des);

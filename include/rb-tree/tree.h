@@ -16,13 +16,13 @@ struct tree {
 
 typedef struct {
 	cmp_func compare;
-	size_t unit_size;
+	size_t data_size;
 	size_t size;
 	struct tree *nil;
 	struct tree *root;
 } rb_tree;
 
-extern rb_tree *tree_init(size_t unit_size, cmp_func f);
+extern rb_tree *tree_init(size_t data_size, cmp_func f);
 extern rb_tree *tree_insert(rb_tree *t, const void *data);
 extern void *tree_search(rb_tree *t, const void *data);
 extern rb_tree *tree_delete(rb_tree *t, void *data);
