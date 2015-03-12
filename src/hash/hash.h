@@ -44,7 +44,7 @@ bool hash_insert(hash *h, const void *data);
 /* delete data from hash table */
 /* return true if delete successfully */
 /* return false if errors happen */
-bool hash_delete(hash *h, const void *data);
+bool hash_delete(hash *h, void *data);
 /* search data in hash table */
 /* if found, return a pointer to data; */
 /* if not found, return NULL */

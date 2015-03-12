@@ -111,7 +111,7 @@ bool hash_insert(hash *h, const void *data)
 /* delete data from hash table */
 /* return true if delete successfully */
 /* return false if errors happen */
-bool hash_delete(hash *h, const void *data)
+bool hash_delete(hash *h, void *data)
 {
 	if(!h) return false;
 	int integer = h->hash(data);
@@ -127,6 +127,7 @@ bool hash_delete(hash *h, const void *data)
 	while(x != NULL) {
 		if(h->compare(x->data, data) == 0) {
 			*prev = x->next;
+			copy(data, x, h->data_size);
 			free_node(x);
 			return true;
 		}
