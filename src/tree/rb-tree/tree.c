@@ -220,7 +220,7 @@ void rb_insert_fixup(rb_tree *t, struct tree *x)
 			} else {
 				if(x == x->p->left) { /* case 2 */
 					x = x->p;
-					left_rotate(t, x); /* convert to case 3 */
+					right_rotate(t, x); /* convert to case 3 */
 				}
 				x->p->color = BLACK; /* case 3 */
 				x->p->p->color = RED;
