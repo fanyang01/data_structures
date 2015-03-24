@@ -19,8 +19,6 @@ typedef struct {
 	heap_tree *list;
 } heap;
 
-typedef heap_tree *heap_handle;
-
 extern heap *heap_init(size_t data_size, cmp_func f);
 extern bool heap_is_empty(const heap *h);
 extern void heap_free(heap *h);
